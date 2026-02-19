@@ -2,7 +2,7 @@
   "servers": {
     "memory": {
       "type": "http",
-      "url": "https://context-vault.onrender.com/mcp",
+      "url": "https://context-vault-6nq9.onrender.com/mcp",
       "headers": {
         "Authorization": "Bearer 54aa391b01e1cbf961e3daf99991aba3c66e1799c00fe7e3d42fead180d1b342"
       }
