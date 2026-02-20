@@ -195,6 +195,19 @@ func RelationshipToMap(key, typ string) map[string]interface{} {
 	}
 }
 
+// ValidateSchemaVersion checks RULE-001: _helios_schema_version must be present and equal to "1".
+func ValidateSchemaVersion(input map[string]interface{}) error {
+	v, exists := input["_helios_schema_version"]
+	if !exists {
+		return fmt.Errorf("CANON_ERR_SCHEMA_VERSION_MISSING: _helios_schema_version field is required")
+	}
+	s, ok := v.(string)
+	if !ok || s != "1" {
+		return fmt.Errorf("CANON_ERR_SCHEMA_VERSION_INVALID: _helios_schema_version must be string \"1\", got %v", v)
+	}
+	return nil
+}
+
 // ValidateIngestValue recursively validates a parsed JSON value for spec compliance.
 // Checks: RULE-002 (no floats), RULE-009 (integer range), RULE-010 (no nulls).
 // Expects values from json.Decoder with UseNumber().

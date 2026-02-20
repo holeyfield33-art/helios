@@ -7,6 +7,7 @@
       "vector_id": "POS-001",
       "description": "Basic memory object with all standard fields",
       "input": {
+        "_helios_schema_version": "1",
         "category": "project",
         "created_at": "2025-01-15T10:30:00.000Z",
         "key": "test/basic_memory",
@@ -38,6 +39,7 @@
       "vector_id": "POS-002",
       "description": "Verifies keys are sorted lexicographically regardless of input order",
       "input": {
+        "_helios_schema_version": "1",
         "value": "Key ordering test value",
         "source": "system",
         "key": "test/key_ordering",
@@ -65,6 +67,7 @@
       "vector_id": "POS-003",
       "description": "Verifies NFC normalization produces consistent hash for NFD input",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-03-20T14:15:00.000Z",
         "key": "test/unicode_caf\u00e9",
@@ -92,6 +95,7 @@
       "vector_id": "POS-004",
       "description": "Verifies relationships are sorted by key then type",
       "input": {
+        "_helios_schema_version": "1",
         "category": "workflow",
         "created_at": "2025-02-28T08:45:00.000Z",
         "key": "test/relationship_sorting",
@@ -127,6 +131,7 @@
       "vector_id": "POS-005",
       "description": "Valid UTC millisecond timestamp with native boolean value",
       "input": {
+        "_helios_schema_version": "1",
         "category": "flags",
         "created_at": "2025-12-25T23:59:59.999Z",
         "key": "test/boolean_value",
@@ -154,6 +159,7 @@
       "vector_id": "NEG-001",
       "description": "Float at top level — prohibited by RULE-002",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.000Z",
         "key": "test/float_top_level",
@@ -173,6 +179,7 @@
       "vector_id": "NEG-002",
       "description": "Float nested inside object — prohibited by RULE-002",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.000Z",
         "key": "test/float_nested",
@@ -192,6 +199,7 @@
       "vector_id": "NEG-003",
       "description": "Scientific notation float — prohibited by RULE-002",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.000Z",
         "key": "test/float_scientific",
@@ -211,6 +219,7 @@
       "vector_id": "NEG-004",
       "description": "Null at top level value — prohibited by RULE-010",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.000Z",
         "key": "test/null_top_level",
@@ -230,6 +239,7 @@
       "vector_id": "NEG-005",
       "description": "Null nested inside value object — prohibited by RULE-010",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.000Z",
         "key": "test/null_nested",
@@ -249,6 +259,7 @@
       "vector_id": "NEG-006",
       "description": "Integer exceeds int64 max — prohibited by RULE-009",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.000Z",
         "key": "test/int_overflow_positive",
@@ -268,6 +279,7 @@
       "vector_id": "NEG-007",
       "description": "Integer below int64 min — prohibited by RULE-009",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.000Z",
         "key": "test/int_overflow_negative",
@@ -287,6 +299,7 @@
       "vector_id": "NEG-008",
       "description": "Timestamp with non-UTC offset — prohibited by RULE-005",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.000+05:00",
         "key": "test/timestamp_non_utc",
@@ -306,6 +319,7 @@
       "vector_id": "NEG-009",
       "description": "Timestamp with wrong precision (4 decimal digits) — prohibited by RULE-005",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-01T00:00:00.1234Z",
         "key": "test/timestamp_wrong_precision",
@@ -320,6 +334,65 @@
       "vector_type": "negative",
       "expected_outcome": "REJECT",
       "rejection_code": "CANON_ERR_TIMESTAMP_INVALID_PRECISION"
+    },
+    {
+      "vector_id": "NEG-010",
+      "description": "_helios_schema_version field missing entirely — prohibited by RULE-001",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/schema_version_missing",
+        "relationships": [],
+        "source": "user",
+        "value": "test"
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-001"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_SCHEMA_VERSION_MISSING"
+    },
+    {
+      "vector_id": "NEG-011",
+      "description": "_helios_schema_version present but wrong value — prohibited by RULE-001",
+      "input": {
+        "_helios_schema_version": "2",
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/schema_version_wrong_value",
+        "relationships": [],
+        "source": "user",
+        "value": "test"
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-001"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_SCHEMA_VERSION_INVALID"
+    },
+    {
+      "vector_id": "NEG-012",
+      "description": "_helios_schema_version wrong type (integer instead of string) — prohibited by RULE-001",
+      "input": {
+        "_helios_schema_version": 1,
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/schema_version_wrong_type",
+        "relationships": [],
+        "source": "user",
+        "value": "test"
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-001"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_SCHEMA_VERSION_INVALID"
     }
   ]
 }

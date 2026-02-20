@@ -333,3 +333,56 @@ func TestIngestRejectsNestedNull(t *testing.T) {
 		t.Errorf("expected CANON_ERR_NULL_PROHIBITED, got: %v", err)
 	}
 }
+
+func TestSchemaVersionMissing(t *testing.T) {
+	input := map[string]interface{}{
+		"category": "test",
+		"key":      "test/missing",
+	}
+	err := ValidateSchemaVersion(input)
+	if err == nil {
+		t.Fatal("expected CANON_ERR_SCHEMA_VERSION_MISSING, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_SCHEMA_VERSION_MISSING") {
+		t.Errorf("expected CANON_ERR_SCHEMA_VERSION_MISSING, got: %v", err)
+	}
+}
+
+func TestSchemaVersionWrongValue(t *testing.T) {
+	input := map[string]interface{}{
+		"_helios_schema_version": "2",
+		"category":              "test",
+	}
+	err := ValidateSchemaVersion(input)
+	if err == nil {
+		t.Fatal("expected CANON_ERR_SCHEMA_VERSION_INVALID, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_SCHEMA_VERSION_INVALID") {
+		t.Errorf("expected CANON_ERR_SCHEMA_VERSION_INVALID, got: %v", err)
+	}
+}
+
+func TestSchemaVersionWrongType(t *testing.T) {
+	input := map[string]interface{}{
+		"_helios_schema_version": 1,
+		"category":              "test",
+	}
+	err := ValidateSchemaVersion(input)
+	if err == nil {
+		t.Fatal("expected CANON_ERR_SCHEMA_VERSION_INVALID, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_SCHEMA_VERSION_INVALID") {
+		t.Errorf("expected CANON_ERR_SCHEMA_VERSION_INVALID, got: %v", err)
+	}
+}
+
+func TestSchemaVersionAcceptsValid(t *testing.T) {
+	input := map[string]interface{}{
+		"_helios_schema_version": "1",
+		"category":              "test",
+	}
+	err := ValidateSchemaVersion(input)
+	if err != nil {
+		t.Errorf("expected schema version \"1\" to pass, got: %v", err)
+	}
+}

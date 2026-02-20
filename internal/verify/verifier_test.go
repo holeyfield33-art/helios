@@ -18,6 +18,7 @@ func TestVerifierExitsOnHashMismatch(t *testing.T) {
       "vector_type": "positive",
       "expected_outcome": "accept",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-15T10:30:00.000Z",
         "key": "test/mismatch",
@@ -66,6 +67,7 @@ func TestVerifierPassesOnCorrectHash(t *testing.T) {
       "vector_type": "positive",
       "expected_outcome": "accept",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-15T10:30:00.000Z",
         "key": "test/self_check",
@@ -103,6 +105,7 @@ func TestVerifierPassesOnCorrectHash(t *testing.T) {
       "vector_type": "positive",
       "expected_outcome": "accept",
       "input": {
+        "_helios_schema_version": "1",
         "category": "test",
         "created_at": "2025-01-15T10:30:00.000Z",
         "key": "test/self_check",

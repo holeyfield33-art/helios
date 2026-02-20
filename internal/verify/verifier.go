@@ -133,8 +133,13 @@ func VerifyVectors(path string) ([]VerifyResult, error) {
 }
 
 // inputToMemoryObject converts a raw JSON map into a MemoryObject.
-// Validates ingest rules: RULE-002 (no floats), RULE-009 (integer range), RULE-010 (no nulls).
+// Validates ingest rules: RULE-001 (schema version), RULE-002 (no floats), RULE-009 (integer range), RULE-010 (no nulls).
 func inputToMemoryObject(input map[string]interface{}) (object.MemoryObject, error) {
+	// RULE-001: schema version validation
+	if err := canon.ValidateSchemaVersion(input); err != nil {
+		return object.MemoryObject{}, err
+	}
+
 	// Ingest validation — check the raw parsed value for spec violations
 	if err := canon.ValidateIngestValue(input["value"]); err != nil {
 		return object.MemoryObject{}, err

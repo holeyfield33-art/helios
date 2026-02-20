@@ -154,3 +154,26 @@ class TestIngestValidation:
     def test_accepts_bool(self):
         from conformance.canon import validate_ingest_value
         validate_ingest_value(True)  # should pass
+
+
+class TestSchemaVersionValidation:
+    """Tests for validate_schema_version (RULE-001)."""
+
+    def test_rejects_missing(self):
+        from conformance.canon import validate_schema_version
+        with pytest.raises(ValueError, match="CANON_ERR_SCHEMA_VERSION_MISSING"):
+            validate_schema_version({"category": "test", "key": "test/missing"})
+
+    def test_rejects_wrong_value(self):
+        from conformance.canon import validate_schema_version
+        with pytest.raises(ValueError, match="CANON_ERR_SCHEMA_VERSION_INVALID"):
+            validate_schema_version({"_helios_schema_version": "2", "category": "test"})
+
+    def test_rejects_wrong_type_int(self):
+        from conformance.canon import validate_schema_version
+        with pytest.raises(ValueError, match="CANON_ERR_SCHEMA_VERSION_INVALID"):
+            validate_schema_version({"_helios_schema_version": 1, "category": "test"})
+
+    def test_accepts_valid(self):
+        from conformance.canon import validate_schema_version
+        validate_schema_version({"_helios_schema_version": "1", "category": "test"})  # should pass

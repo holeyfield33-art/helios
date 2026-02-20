@@ -6,7 +6,7 @@ from typing import Any
 
 from conformance.hasher import content_hash
 from conformance.objects import MemoryObject, Relationship
-from conformance.canon import validate_ingest_value
+from conformance.canon import validate_ingest_value, validate_schema_version
 
 
 def load_vectors(path: str) -> list:
@@ -18,8 +18,11 @@ def load_vectors(path: str) -> list:
 
 def input_to_memory_object(inp: dict) -> MemoryObject:
     """Convert a raw JSON dict to a MemoryObject.
-    Validates ingest rules: RULE-002 (no floats), RULE-009 (integer range), RULE-010 (no nulls).
+    Validates ingest rules: RULE-001 (schema version), RULE-002 (no floats), RULE-009 (integer range), RULE-010 (no nulls).
     """
+    # RULE-001: schema version validation
+    validate_schema_version(inp)
+
     # Ingest validation on the value field
     validate_ingest_value(inp.get("value"), "value")
 

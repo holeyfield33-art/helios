@@ -95,6 +95,15 @@ def relationship_to_map(r) -> dict:
     return {"key": r.key, "type": r.type}
 
 
+def validate_schema_version(input: dict) -> None:
+    """Validate RULE-001: _helios_schema_version must be present and equal to \"1\"."""
+    if "_helios_schema_version" not in input:
+        raise ValueError("CANON_ERR_SCHEMA_VERSION_MISSING: _helios_schema_version field is required")
+    v = input["_helios_schema_version"]
+    if not isinstance(v, str) or v != "1":
+        raise ValueError(f"CANON_ERR_SCHEMA_VERSION_INVALID: _helios_schema_version must be string \"1\", got {v!r}")
+
+
 def validate_ingest_value(v, path: str = "") -> None:
     """Recursively validate a parsed JSON value for spec compliance.
 
