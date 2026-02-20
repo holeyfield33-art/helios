@@ -12,6 +12,7 @@ from conformance.objects import HashInput, MemoryObject, Relationship
 class TestGoldenCanonicalBytes:
     def test_golden_bytes(self):
         fields = {
+            "_helios_schema_version": "1",
             "category": "test",
             "created_at": "2025-01-01T00:00:00.000Z",
             "key": "golden/test",
@@ -20,7 +21,7 @@ class TestGoldenCanonicalBytes:
             "value": "hello",
         }
         result = canonicalize_object(fields)
-        expected = b'{"category":"test","created_at":"2025-01-01T00:00:00.000Z","key":"golden/test","relationships":[],"source":"unit_test","value":"hello"}'
+        expected = b'{"_helios_schema_version":"1","category":"test","created_at":"2025-01-01T00:00:00.000Z","key":"golden/test","relationships":[],"source":"unit_test","value":"hello"}'
         assert result == expected
 
 
@@ -42,17 +43,17 @@ class TestVectorHashMatchesFrozenValue:
             value="This is a test memory for hash verification.",
         )
         h = content_hash(obj)
-        frozen = "cae6f0ca521caeb1f74470aeca5a75ff1fe098809a034e8a15e0eb4762b4f485"
+        frozen = "c3262407645dcdbd1cede212fa0448a3adb2f915f762540c32e0050bbf65e781"
         assert h == frozen, f"hash mismatch: got {h}, frozen {frozen}"
 
-    def test_all_5_frozen_hashes(self):
-        """Verify all 5 frozen hashes from the Go implementation."""
+    def test_all_positive_frozen_hashes(self):
+        """Verify all positive frozen hashes from frozen_vectors_v3."""
         expected_hashes = {
-            "basic": "cae6f0ca521caeb1f74470aeca5a75ff1fe098809a034e8a15e0eb4762b4f485",
-            "key_ordering": "437573e624f5c2a8ffbd08e7e1f8d5491b1bf0fad7287d989e1e50be19c00a0f",
-            "unicode_normalization": "68e92122b2993e8c8a416dabe8c1af18dbb4621760d9c569abc0c0621e064732",
-            "null_value": "7b23e07bdb8fb414ac689b62f78c790bbbce9abeb433f018e8c5883097a6e845",
-            "relationship_sorting": "11d3af8b06e69c463484cbd36dc3ee880fb74c6459285515200a87a8ba1f9452",
+            "POS-001": "c3262407645dcdbd1cede212fa0448a3adb2f915f762540c32e0050bbf65e781",
+            "POS-002": "694cafaa80dd0121a4c4415ac44793fee17104d02756b3c1456dd79fc467c1d0",
+            "POS-003": "d7b4f1c46600c6b7f6733e866455cfa3c5646b6e63625a2107a6a57a36be486c",
+            "POS-004": "5e43f9576ec448e9111856b8e0f95593e4aa427ba9ec71cb3a6b574a91719558",
+            "POS-005": "84c6d544a9ee3b9c1bd48a17d8835f25a7df62cd520f78f12fa49810b9e35945",
         }
 
         # Find vectors.json relative to this test file
@@ -63,9 +64,11 @@ class TestVectorHashMatchesFrozenValue:
             data = json.load(f)
 
         for vec in data["vectors"]:
-            name = vec["name"]
-            inp = vec["input"]
+            vector_id = vec["vector_id"]
+            if vec["vector_type"] != "positive":
+                continue
 
+            inp = vec["input"]
             relationships = []
             for r in inp.get("relationships", []):
                 relationships.append(Relationship(key=r["key"], type=r["type"]))
@@ -80,8 +83,8 @@ class TestVectorHashMatchesFrozenValue:
             )
 
             computed = content_hash(obj)
-            assert computed == expected_hashes[name], (
-                f"Vector '{name}': expected {expected_hashes[name]}, got {computed}"
+            assert computed == expected_hashes[vector_id], (
+                f"Vector '{vector_id}': expected {expected_hashes[vector_id]}, got {computed}"
             )
 
 

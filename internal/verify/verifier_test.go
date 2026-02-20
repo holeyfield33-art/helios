@@ -9,10 +9,14 @@ import (
 func TestVerifierExitsOnHashMismatch(t *testing.T) {
 	// Create a temp vector file with a deliberately wrong hash (64 zeros)
 	vectorJSON := `{
+  "spec_version": "helios-canonical-serialization-v1",
+  "vectors_version": "3",
   "vectors": [
     {
-      "name": "deliberate_mismatch",
+      "vector_id": "TEST-MISMATCH",
       "description": "Vector with wrong expected hash",
+      "vector_type": "positive",
+      "expected_outcome": "accept",
       "input": {
         "category": "test",
         "created_at": "2025-01-15T10:30:00.000Z",
@@ -21,7 +25,7 @@ func TestVerifierExitsOnHashMismatch(t *testing.T) {
         "source": "user",
         "value": "test value"
       },
-      "expected_content_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+      "hash": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   ]
 }`
@@ -53,10 +57,14 @@ func TestVerifierExitsOnHashMismatch(t *testing.T) {
 func TestVerifierPassesOnCorrectHash(t *testing.T) {
 	// First compute the actual hash, then create a vector with it
 	vectorJSON := `{
+  "spec_version": "helios-canonical-serialization-v1",
+  "vectors_version": "3",
   "vectors": [
     {
-      "name": "self_check",
+      "vector_id": "TEST-SELF",
       "description": "Compute hash then verify",
+      "vector_type": "positive",
+      "expected_outcome": "accept",
       "input": {
         "category": "test",
         "created_at": "2025-01-15T10:30:00.000Z",
@@ -65,7 +73,7 @@ func TestVerifierPassesOnCorrectHash(t *testing.T) {
         "source": "user",
         "value": "hello world"
       },
-      "expected_content_hash": "PLACEHOLDER"
+      "hash": "PLACEHOLDER"
     }
   ]
 }`
@@ -86,10 +94,14 @@ func TestVerifierPassesOnCorrectHash(t *testing.T) {
 
 	// Rewrite with correct hash
 	correctedJSON := `{
+  "spec_version": "helios-canonical-serialization-v1",
+  "vectors_version": "3",
   "vectors": [
     {
-      "name": "self_check",
+      "vector_id": "TEST-SELF",
       "description": "Compute hash then verify",
+      "vector_type": "positive",
+      "expected_outcome": "accept",
       "input": {
         "category": "test",
         "created_at": "2025-01-15T10:30:00.000Z",
@@ -98,7 +110,7 @@ func TestVerifierPassesOnCorrectHash(t *testing.T) {
         "source": "user",
         "value": "hello world"
       },
-      "expected_content_hash": "` + actualHash + `"
+      "hash": "` + actualHash + `"
     }
   ]
 }`

@@ -46,8 +46,9 @@ def content_hash(obj: MemoryObject) -> str:
             "type": normalize_string(r.type),
         })
 
-    # Step 5: Build explicit field map with exactly 6 keys
+    # Step 5: Build explicit field map with exactly 7 keys (6 data + schema version)
     fields = {
+        "_helios_schema_version": "1",
         "category": inp.category,
         "created_at": inp.created_at,
         "key": inp.key,

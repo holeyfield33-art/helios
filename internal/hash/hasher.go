@@ -19,6 +19,11 @@ import (
 //  5. Build explicit field map
 //  6. Canonicalize → SHA-256 → hex
 func ContentHash(obj object.MemoryObject) (string, error) {
+	// Step 0: Null prohibition check (RULE-010)
+	if obj.Value == nil {
+		return "", fmt.Errorf("CANON_ERR_NULL_PROHIBITED: null values are not permitted")
+	}
+
 	// Step 1: Extract only the 6 hash-relevant fields
 	inp := object.NewHashInput(obj)
 
@@ -67,12 +72,13 @@ func ContentHash(obj object.MemoryObject) (string, error) {
 	}
 
 	fields := map[string]interface{}{
-		"category":      inp.Category,
-		"created_at":    inp.CreatedAt,
-		"key":           inp.Key,
-		"relationships": relsInterface,
-		"source":        inp.Source,
-		"value":         normalizedValue,
+		"_helios_schema_version": "1",
+		"category":               inp.Category,
+		"created_at":             inp.CreatedAt,
+		"key":                    inp.Key,
+		"relationships":          relsInterface,
+		"source":                 inp.Source,
+		"value":                  normalizedValue,
 	}
 
 	// Step 6: Canonicalize → SHA-256 → hex

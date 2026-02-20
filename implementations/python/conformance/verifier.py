@@ -6,6 +6,7 @@ from typing import Any
 
 from conformance.hasher import content_hash
 from conformance.objects import MemoryObject, Relationship
+from conformance.canon import validate_ingest_value
 
 
 def load_vectors(path: str) -> list:
@@ -16,7 +17,12 @@ def load_vectors(path: str) -> list:
 
 
 def input_to_memory_object(inp: dict) -> MemoryObject:
-    """Convert a raw JSON dict to a MemoryObject."""
+    """Convert a raw JSON dict to a MemoryObject.
+    Validates ingest rules: RULE-002 (no floats), RULE-009 (integer range), RULE-010 (no nulls).
+    """
+    # Ingest validation on the value field
+    validate_ingest_value(inp.get("value"), "value")
+
     relationships = []
     for r in inp.get("relationships", []):
         relationships.append(Relationship(key=r["key"], type=r["type"]))
@@ -40,14 +46,34 @@ def verify_vectors(path: str) -> list:
     failures = 0
 
     for vec in vectors:
-        name = vec["name"]
-        expected = vec["expected_content_hash"]
-        obj = input_to_memory_object(vec["input"])
-        got = content_hash(obj)
-        passed = got == expected
-        results.append((name, expected, got, passed))
-        if not passed:
-            failures += 1
+        vector_id = vec["vector_id"]
+        vector_type = vec.get("vector_type", "positive")
+        expected_outcome = vec.get("expected_outcome", "ACCEPT")
+
+        if vector_type == "negative":
+            # Negative vectors: expect rejection
+            rejection_code = vec.get("rejection_code", "")
+            try:
+                obj = input_to_memory_object(vec["input"])
+                got = content_hash(obj)
+                # Should have been rejected but wasn't
+                results.append((vector_id, "REJECT", f"ACCEPT: {got}", False))
+                failures += 1
+            except (ValueError, Exception) as e:
+                error_msg = str(e)
+                passed = rejection_code and rejection_code in error_msg
+                results.append((vector_id, "REJECT", error_msg, passed))
+                if not passed:
+                    failures += 1
+        else:
+            # Positive vectors: expect successful hash match
+            expected_hash = vec["hash"]
+            obj = input_to_memory_object(vec["input"])
+            got = content_hash(obj)
+            passed = got == expected_hash
+            results.append((vector_id, expected_hash, got, passed))
+            if not passed:
+                failures += 1
 
     return results, failures
 

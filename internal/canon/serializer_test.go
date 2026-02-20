@@ -24,18 +24,32 @@ func TestKeyOrdering(t *testing.T) {
 	}
 }
 
-func TestNullInclusion(t *testing.T) {
+func TestNullRejection(t *testing.T) {
 	obj := map[string]interface{}{
 		"key":   "test",
 		"value": nil,
 	}
-	result, err := CanonicalizeObject(obj)
-	if err != nil {
-		t.Fatal(err)
+	_, err := CanonicalizeObject(obj)
+	if err == nil {
+		t.Fatal("expected CANON_ERR_NULL_PROHIBITED error for null value, got nil")
 	}
-	s := string(result)
-	if !strings.Contains(s, `"value":null`) {
-		t.Errorf("null value must be included, got: %s", s)
+	if !strings.Contains(err.Error(), "CANON_ERR_NULL_PROHIBITED") {
+		t.Errorf("expected CANON_ERR_NULL_PROHIBITED, got: %v", err)
+	}
+}
+
+func TestNullNestedRejection(t *testing.T) {
+	obj := map[string]interface{}{
+		"outer": map[string]interface{}{
+			"inner": nil,
+		},
+	}
+	_, err := CanonicalizeObject(obj)
+	if err == nil {
+		t.Fatal("expected CANON_ERR_NULL_PROHIBITED error for nested null, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_NULL_PROHIBITED") {
+		t.Errorf("expected CANON_ERR_NULL_PROHIBITED, got: %v", err)
 	}
 }
 
@@ -208,5 +222,114 @@ func TestJSONNumberHandling(t *testing.T) {
 	expected := `{"count":42,"ratio":3.14}`
 	if string(result) != expected {
 		t.Errorf("expected %s, got %s", expected, string(result))
+	}
+}
+
+// --- Ingest validation tests (RULE-002, RULE-009, RULE-010) ---
+
+func TestIngestRejectsFloat(t *testing.T) {
+	input := `{"value": 3.14}`
+	dec := json.NewDecoder(strings.NewReader(input))
+	dec.UseNumber()
+	var obj map[string]interface{}
+	if err := dec.Decode(&obj); err != nil {
+		t.Fatal(err)
+	}
+	err := ValidateIngestValue(obj["value"])
+	if err == nil {
+		t.Fatal("expected CANON_ERR_FLOAT_PROHIBITED, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_FLOAT_PROHIBITED") {
+		t.Errorf("expected CANON_ERR_FLOAT_PROHIBITED, got: %v", err)
+	}
+}
+
+func TestIngestRejectsScientificNotation(t *testing.T) {
+	input := `{"value": 1e10}`
+	dec := json.NewDecoder(strings.NewReader(input))
+	dec.UseNumber()
+	var obj map[string]interface{}
+	if err := dec.Decode(&obj); err != nil {
+		t.Fatal(err)
+	}
+	err := ValidateIngestValue(obj["value"])
+	if err == nil {
+		t.Fatal("expected CANON_ERR_FLOAT_PROHIBITED, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_FLOAT_PROHIBITED") {
+		t.Errorf("expected CANON_ERR_FLOAT_PROHIBITED, got: %v", err)
+	}
+}
+
+func TestIngestRejectsIntegerOverflow(t *testing.T) {
+	input := `{"value": 9223372036854775808}` // int64 max + 1
+	dec := json.NewDecoder(strings.NewReader(input))
+	dec.UseNumber()
+	var obj map[string]interface{}
+	if err := dec.Decode(&obj); err != nil {
+		t.Fatal(err)
+	}
+	err := ValidateIngestValue(obj["value"])
+	if err == nil {
+		t.Fatal("expected CANON_ERR_INTEGER_OUT_OF_RANGE, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_INTEGER_OUT_OF_RANGE") {
+		t.Errorf("expected CANON_ERR_INTEGER_OUT_OF_RANGE, got: %v", err)
+	}
+}
+
+func TestIngestRejectsNegativeIntegerOverflow(t *testing.T) {
+	input := `{"value": -9223372036854775809}` // int64 min - 1
+	dec := json.NewDecoder(strings.NewReader(input))
+	dec.UseNumber()
+	var obj map[string]interface{}
+	if err := dec.Decode(&obj); err != nil {
+		t.Fatal(err)
+	}
+	err := ValidateIngestValue(obj["value"])
+	if err == nil {
+		t.Fatal("expected CANON_ERR_INTEGER_OUT_OF_RANGE, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_INTEGER_OUT_OF_RANGE") {
+		t.Errorf("expected CANON_ERR_INTEGER_OUT_OF_RANGE, got: %v", err)
+	}
+}
+
+func TestIngestAcceptsValidInteger(t *testing.T) {
+	input := `{"value": 9223372036854775807}` // int64 max
+	dec := json.NewDecoder(strings.NewReader(input))
+	dec.UseNumber()
+	var obj map[string]interface{}
+	if err := dec.Decode(&obj); err != nil {
+		t.Fatal(err)
+	}
+	err := ValidateIngestValue(obj["value"])
+	if err != nil {
+		t.Errorf("expected valid integer to pass, got: %v", err)
+	}
+}
+
+func TestIngestRejectsNull(t *testing.T) {
+	err := ValidateIngestValue(nil)
+	if err == nil {
+		t.Fatal("expected CANON_ERR_NULL_PROHIBITED, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_NULL_PROHIBITED") {
+		t.Errorf("expected CANON_ERR_NULL_PROHIBITED, got: %v", err)
+	}
+}
+
+func TestIngestRejectsNestedNull(t *testing.T) {
+	input := map[string]interface{}{
+		"outer": map[string]interface{}{
+			"inner": nil,
+		},
+	}
+	err := ValidateIngestValue(input)
+	if err == nil {
+		t.Fatal("expected CANON_ERR_NULL_PROHIBITED, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_NULL_PROHIBITED") {
+		t.Errorf("expected CANON_ERR_NULL_PROHIBITED, got: %v", err)
 	}
 }

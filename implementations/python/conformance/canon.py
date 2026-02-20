@@ -19,17 +19,17 @@ def normalize_timestamp(s: str) -> str:
     Matches Go behavior: explicit rejection on invalid input.
     """
     if not s.endswith("Z"):
-        raise ValueError(f"Timestamp must end in Z, got: {s}")
+        raise ValueError(f"CANON_ERR_TIMESTAMP_NON_UTC: Timestamp must end in Z, got: {s}")
 
     # Validate exactly 3 fractional digits
     dot_idx = s.rfind(".")
     if dot_idx == -1:
-        raise ValueError(f"Timestamp must have exactly 3 fractional digits, got none: {s}")
+        raise ValueError(f"CANON_ERR_TIMESTAMP_INVALID_PRECISION: Timestamp must have exactly 3 fractional digits, got none: {s}")
 
     frac = s[dot_idx + 1 : -1]  # between '.' and 'Z'
     if len(frac) != 3:
         raise ValueError(
-            f"Timestamp must have exactly 3 fractional digits, got {len(frac)}: {s}"
+            f"CANON_ERR_TIMESTAMP_INVALID_PRECISION: Timestamp must have exactly 3 fractional digits, got {len(frac)}: {s}"
         )
 
     # Validate parsability (basic structure check)
@@ -75,12 +75,14 @@ def _normalize_dict(d: dict) -> dict:
 
 def _normalize_value(v):
     """Recursively normalize a value for canonical serialization."""
+    if v is None:
+        raise ValueError("CANON_ERR_NULL_PROHIBITED: null values are not permitted")
     if isinstance(v, dict):
         return _normalize_dict(v)
     elif isinstance(v, list):
         return [_normalize_value(item) for item in v]  # preserve order
     else:
-        return v  # str, int, float, bool, None pass through as-is
+        return v  # str, int, float, bool pass through as-is
 
 
 def sort_relationships(rels: list) -> list:
@@ -91,3 +93,32 @@ def sort_relationships(rels: list) -> list:
 def relationship_to_map(r) -> dict:
     """Convert a Relationship to an explicit dict. Never rely on dataclass ordering."""
     return {"key": r.key, "type": r.type}
+
+
+def validate_ingest_value(v, path: str = "") -> None:
+    """Recursively validate a parsed JSON value for spec compliance.
+
+    Checks:
+    - RULE-002: No float values (CANON_ERR_FLOAT_PROHIBITED)
+    - RULE-009: Integer range within signed 64-bit (CANON_ERR_INTEGER_OUT_OF_RANGE)
+    - RULE-010: No null/None values (CANON_ERR_NULL_PROHIBITED)
+    """
+    if v is None:
+        raise ValueError(f"CANON_ERR_NULL_PROHIBITED: null value at {path}")
+    elif isinstance(v, float):
+        raise ValueError(f"CANON_ERR_FLOAT_PROHIBITED: float value at {path}")
+    elif isinstance(v, bool):
+        pass  # bool check before int because bool is subclass of int in Python
+    elif isinstance(v, int):
+        if v > 9223372036854775807 or v < -9223372036854775808:
+            raise ValueError(f"CANON_ERR_INTEGER_OUT_OF_RANGE: value {v} at {path} exceeds int64 bounds")
+    elif isinstance(v, dict):
+        for k, child in v.items():
+            validate_ingest_value(child, f"{path}.{k}")
+    elif isinstance(v, list):
+        for i, child in enumerate(v):
+            validate_ingest_value(child, f"{path}[{i}]")
+    elif isinstance(v, str):
+        pass  # valid
+    else:
+        raise ValueError(f"Unsupported type {type(v)} at {path}")

@@ -1,6 +1,7 @@
 package hash
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/holeyfield33-art/helios/internal/object"
@@ -93,27 +94,16 @@ func TestNFDandNFCProduceSameHash(t *testing.T) {
 	}
 }
 
-func TestNilValueIncluded(t *testing.T) {
+func TestNilValueRejected(t *testing.T) {
 	obj1 := baseObject()
 	obj1.Value = nil
 
-	h, err := ContentHash(obj1)
-	if err != nil {
-		t.Fatalf("hash failed: %v", err)
+	_, err := ContentHash(obj1)
+	if err == nil {
+		t.Fatal("expected CANON_ERR_NULL_PROHIBITED error for nil value, got nil")
 	}
-	if len(h) != 64 {
-		t.Errorf("hash should be 64 hex chars, got %d", len(h))
-	}
-
-	// Ensure nil value produces a different hash than string "null"
-	obj2 := baseObject()
-	obj2.Value = "null"
-	h2, err := ContentHash(obj2)
-	if err != nil {
-		t.Fatalf("hash2 failed: %v", err)
-	}
-	if h == h2 {
-		t.Error("nil value and string 'null' should produce different hashes")
+	if !strings.Contains(err.Error(), "CANON_ERR_NULL_PROHIBITED") {
+		t.Errorf("expected CANON_ERR_NULL_PROHIBITED, got: %v", err)
 	}
 }
 

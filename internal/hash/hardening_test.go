@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/holeyfield33-art/helios/internal/canon"
@@ -13,14 +14,15 @@ import (
 // TestGoldenCanonicalBytes verifies that a known input produces expected canonical bytes.
 // This catches any accidental change to the serialization logic.
 func TestGoldenCanonicalBytes(t *testing.T) {
-	// Build a minimal known object
+	// Build a minimal known object (with schema version injected at hash time)
 	fields := map[string]interface{}{
-		"category":      "test",
-		"created_at":    "2025-01-01T00:00:00.000Z",
-		"key":           "golden/test",
-		"relationships": []interface{}{},
-		"source":        "unit_test",
-		"value":         "hello",
+		"_helios_schema_version": "1",
+		"category":               "test",
+		"created_at":             "2025-01-01T00:00:00.000Z",
+		"key":                    "golden/test",
+		"relationships":          []interface{}{},
+		"source":                 "unit_test",
+		"value":                  "hello",
 	}
 
 	canonical, err := canon.CanonicalizeObject(fields)
@@ -28,8 +30,8 @@ func TestGoldenCanonicalBytes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The expected canonical form (keys sorted, compact, UTF-8 preserved):
-	expected := `{"category":"test","created_at":"2025-01-01T00:00:00.000Z","key":"golden/test","relationships":[],"source":"unit_test","value":"hello"}`
+	// The expected canonical form (keys sorted, compact, UTF-8 preserved, schema version first):
+	expected := `{"_helios_schema_version":"1","category":"test","created_at":"2025-01-01T00:00:00.000Z","key":"golden/test","relationships":[],"source":"unit_test","value":"hello"}`
 
 	if string(canonical) != expected {
 		t.Errorf("golden bytes mismatch:\n  expected: %s\n  got:      %s", expected, string(canonical))
@@ -148,6 +150,62 @@ func TestHashStabilityAcrossExcludedFields(t *testing.T) {
 	}
 }
 
+// TestSchemaVersionPresent verifies _helios_schema_version appears in canonical JSON.
+func TestSchemaVersionPresent(t *testing.T) {
+	obj := object.MemoryObject{
+		Category:  "test",
+		CreatedAt: "2025-01-01T00:00:00.000Z",
+		Key:       "test/schema",
+		Relationships: []object.Relationship{},
+		Source:    "unit_test",
+		Value:     "hello",
+	}
+
+	h, err := ContentHash(obj)
+	if err != nil {
+		t.Fatalf("hash: %v", err)
+	}
+
+	// Hash without schema version (manually built) should differ
+	fieldsWithout := map[string]interface{}{
+		"category":      "test",
+		"created_at":    "2025-01-01T00:00:00.000Z",
+		"key":           "test/schema",
+		"relationships": []interface{}{},
+		"source":        "unit_test",
+		"value":         "hello",
+	}
+	canonWithout, _ := canon.CanonicalizeObject(fieldsWithout)
+	sumWithout := sha256.Sum256(canonWithout)
+	hashWithout := hex.EncodeToString(sumWithout[:])
+
+	if h == hashWithout {
+		t.Error("hash with schema version should differ from hash without it")
+	}
+}
+
+// TestSchemaVersionIsString verifies _helios_schema_version is the string "1".
+func TestSchemaVersionIsString(t *testing.T) {
+	fields := map[string]interface{}{
+		"_helios_schema_version": "1",
+		"category":               "test",
+		"created_at":             "2025-01-01T00:00:00.000Z",
+		"key":                    "test/schema_type",
+		"relationships":          []interface{}{},
+		"source":                 "unit_test",
+		"value":                  "hello",
+	}
+	canonical, err := canon.CanonicalizeObject(fields)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(canonical)
+	// Must contain the string value "1", not integer 1
+	if !strings.Contains(s, `"_helios_schema_version":"1"`) {
+		t.Errorf("schema version should be string \"1\", got: %s", s)
+	}
+}
+
 // TestVectorHashMatchesFrozenValue verifies the basic vector hash against its frozen value.
 func TestVectorHashMatchesFrozenValue(t *testing.T) {
 	obj := object.MemoryObject{
@@ -166,7 +224,7 @@ func TestVectorHashMatchesFrozenValue(t *testing.T) {
 		t.Fatalf("hash: %v", err)
 	}
 
-	frozen := "cae6f0ca521caeb1f74470aeca5a75ff1fe098809a034e8a15e0eb4762b4f485"
+	frozen := "c3262407645dcdbd1cede212fa0448a3adb2f915f762540c32e0050bbf65e781"
 	if h != frozen {
 		t.Errorf("hash does not match frozen value:\n  got:    %s\n  frozen: %s", h, frozen)
 	}

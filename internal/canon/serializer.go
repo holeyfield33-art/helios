@@ -26,18 +26,18 @@ func NormalizeString(s string) string {
 // Rejects timestamps not ending in Z or not having exactly 3 fractional digits.
 func NormalizeTimestamp(s string) (string, error) {
 	if !strings.HasSuffix(s, "Z") {
-		return "", fmt.Errorf("timestamp must end in Z, got: %s", s)
+		return "", fmt.Errorf("CANON_ERR_TIMESTAMP_NON_UTC: timestamp must end in Z, got: %s", s)
 	}
 
 	// Validate exactly 3 fractional digits
 	dotIdx := strings.LastIndex(s, ".")
 	if dotIdx == -1 {
-		return "", fmt.Errorf("timestamp must have exactly 3 fractional digits, got none: %s", s)
+		return "", fmt.Errorf("CANON_ERR_TIMESTAMP_INVALID_PRECISION: timestamp must have exactly 3 fractional digits, got none: %s", s)
 	}
 	// Extract fractional part (between '.' and 'Z')
 	frac := s[dotIdx+1 : len(s)-1] // strip trailing Z
 	if len(frac) != 3 {
-		return "", fmt.Errorf("timestamp must have exactly 3 fractional digits, got %d: %s", len(frac), s)
+		return "", fmt.Errorf("CANON_ERR_TIMESTAMP_INVALID_PRECISION: timestamp must have exactly 3 fractional digits, got %d: %s", len(frac), s)
 	}
 
 	// Parse with explicit format — NEVER use time.RFC3339Nano
@@ -59,7 +59,7 @@ func CanonicalizeObject(obj map[string]interface{}) ([]byte, error) {
 func canonicalizeValue(v interface{}) ([]byte, error) {
 	switch val := v.(type) {
 	case nil:
-		return []byte("null"), nil
+		return nil, fmt.Errorf("CANON_ERR_NULL_PROHIBITED: null values are not permitted")
 	case bool:
 		if val {
 			return []byte("true"), nil
@@ -193,4 +193,50 @@ func RelationshipToMap(key, typ string) map[string]interface{} {
 		"key":  key,
 		"type": typ,
 	}
+}
+
+// ValidateIngestValue recursively validates a parsed JSON value for spec compliance.
+// Checks: RULE-002 (no floats), RULE-009 (integer range), RULE-010 (no nulls).
+// Expects values from json.Decoder with UseNumber().
+func ValidateIngestValue(v interface{}) error {
+	return validateIngest(v, "")
+}
+
+func validateIngest(v interface{}, path string) error {
+	switch val := v.(type) {
+	case nil:
+		return fmt.Errorf("CANON_ERR_NULL_PROHIBITED: null value at %s", path)
+	case float64:
+		return fmt.Errorf("CANON_ERR_FLOAT_PROHIBITED: float value at %s", path)
+	case json.Number:
+		s := val.String()
+		// Check for float indicators: decimal point or scientific notation
+		if strings.Contains(s, ".") || strings.Contains(s, "e") || strings.Contains(s, "E") {
+			return fmt.Errorf("CANON_ERR_FLOAT_PROHIBITED: numeric value %q at %s contains decimal or exponent", s, path)
+		}
+		// Check integer range (signed 64-bit)
+		_, err := val.Int64()
+		if err != nil {
+			return fmt.Errorf("CANON_ERR_INTEGER_OUT_OF_RANGE: value %q at %s exceeds int64 bounds", s, path)
+		}
+	case map[string]interface{}:
+		for k, child := range val {
+			childPath := path + "." + k
+			if err := validateIngest(child, childPath); err != nil {
+				return err
+			}
+		}
+	case []interface{}:
+		for i, child := range val {
+			childPath := fmt.Sprintf("%s[%d]", path, i)
+			if err := validateIngest(child, childPath); err != nil {
+				return err
+			}
+		}
+	case string, bool:
+		// Valid types, no checks needed
+	default:
+		return fmt.Errorf("unsupported type %T at %s", v, path)
+	}
+	return nil
 }

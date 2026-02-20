@@ -36,19 +36,19 @@ class TestNormalizeTimestamp:
         assert normalize_timestamp("2025-01-15T10:30:00.123Z") == "2025-01-15T10:30:00.123Z"
 
     def test_rejects_no_z(self):
-        with pytest.raises(ValueError, match="must end in Z"):
+        with pytest.raises(ValueError, match="CANON_ERR_TIMESTAMP_NON_UTC"):
             normalize_timestamp("2025-01-15T10:30:00.123+00:00")
 
     def test_rejects_no_decimals(self):
-        with pytest.raises(ValueError, match="fractional digits"):
+        with pytest.raises(ValueError, match="CANON_ERR_TIMESTAMP_INVALID_PRECISION"):
             normalize_timestamp("2025-01-15T10:30:00Z")
 
     def test_rejects_4_decimals(self):
-        with pytest.raises(ValueError, match="fractional digits"):
+        with pytest.raises(ValueError, match="CANON_ERR_TIMESTAMP_INVALID_PRECISION"):
             normalize_timestamp("2025-01-15T10:30:00.1234Z")
 
     def test_rejects_1_decimal(self):
-        with pytest.raises(ValueError, match="fractional digits"):
+        with pytest.raises(ValueError, match="CANON_ERR_TIMESTAMP_INVALID_PRECISION"):
             normalize_timestamp("2025-01-15T10:30:00.1Z")
 
 
@@ -61,9 +61,13 @@ class TestCanonicalizeObject:
         result = canonicalize_object({"z": {"y": 1, "b": 2}, "a": "x"})
         assert result == b'{"a":"x","z":{"b":2,"y":1}}'
 
-    def test_null_inclusion(self):
-        result = canonicalize_object({"a": None, "b": "x"})
-        assert result == b'{"a":null,"b":"x"}'
+    def test_null_rejection_top_level(self):
+        with pytest.raises(ValueError, match="CANON_ERR_NULL_PROHIBITED"):
+            canonicalize_object({"a": None, "b": "x"})
+
+    def test_null_rejection_nested(self):
+        with pytest.raises(ValueError, match="CANON_ERR_NULL_PROHIBITED"):
+            canonicalize_object({"outer": {"inner": None}})
 
     def test_array_preservation(self):
         result = canonicalize_object({"arr": [3, 1, 2]})
@@ -105,3 +109,48 @@ class TestRelationships:
         r = Relationship(key="x", type="ref")
         result = canonicalize_object(relationship_to_map(r))
         assert result == b'{"key":"x","type":"ref"}'
+
+
+class TestIngestValidation:
+    """Tests for validate_ingest_value (RULE-002, RULE-009, RULE-010)."""
+
+    def test_rejects_float(self):
+        from conformance.canon import validate_ingest_value
+        with pytest.raises(ValueError, match="CANON_ERR_FLOAT_PROHIBITED"):
+            validate_ingest_value(3.14)
+
+    def test_rejects_null(self):
+        from conformance.canon import validate_ingest_value
+        with pytest.raises(ValueError, match="CANON_ERR_NULL_PROHIBITED"):
+            validate_ingest_value(None)
+
+    def test_rejects_nested_null(self):
+        from conformance.canon import validate_ingest_value
+        with pytest.raises(ValueError, match="CANON_ERR_NULL_PROHIBITED"):
+            validate_ingest_value({"outer": {"inner": None}})
+
+    def test_rejects_integer_overflow(self):
+        from conformance.canon import validate_ingest_value
+        with pytest.raises(ValueError, match="CANON_ERR_INTEGER_OUT_OF_RANGE"):
+            validate_ingest_value(9223372036854775808)  # int64 max + 1
+
+    def test_rejects_negative_integer_overflow(self):
+        from conformance.canon import validate_ingest_value
+        with pytest.raises(ValueError, match="CANON_ERR_INTEGER_OUT_OF_RANGE"):
+            validate_ingest_value(-9223372036854775809)  # int64 min - 1
+
+    def test_accepts_valid_integer(self):
+        from conformance.canon import validate_ingest_value
+        validate_ingest_value(9223372036854775807)  # int64 max — should pass
+
+    def test_accepts_valid_int64_min(self):
+        from conformance.canon import validate_ingest_value
+        validate_ingest_value(-9223372036854775808)  # int64 min — should pass
+
+    def test_accepts_string(self):
+        from conformance.canon import validate_ingest_value
+        validate_ingest_value("hello")  # should pass
+
+    def test_accepts_bool(self):
+        from conformance.canon import validate_ingest_value
+        validate_ingest_value(True)  # should pass

@@ -43,16 +43,11 @@ class TestContentHash:
 
         assert content_hash(obj1) == content_hash(obj2)
 
-    def test_nil_value_included(self):
+    def test_nil_value_rejected(self):
         obj = _base_object()
         obj.value = None
-        h = content_hash(obj)
-        assert len(h) == 64
-
-        # nil and string "null" must differ
-        obj2 = _base_object()
-        obj2.value = "null"
-        assert content_hash(obj) != content_hash(obj2)
+        with pytest.raises(ValueError, match="CANON_ERR_NULL_PROHIBITED"):
+            content_hash(obj)
 
     def test_hash_stability(self):
         obj = _base_object()

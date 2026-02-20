@@ -7,21 +7,27 @@ import (
 	"os"
 	"strings"
 
+	"github.com/holeyfield33-art/helios/internal/canon"
 	"github.com/holeyfield33-art/helios/internal/hash"
 	"github.com/holeyfield33-art/helios/internal/object"
 )
 
 // TestVector represents a single test vector from vectors.json.
 type TestVector struct {
-	Name                string                 `json:"name"`
-	Description         string                 `json:"description"`
-	Input               map[string]interface{} `json:"input"`
-	ExpectedContentHash string                 `json:"expected_content_hash"`
+	VectorID        string                 `json:"vector_id"`
+	Description     string                 `json:"description"`
+	Input           map[string]interface{} `json:"input"`
+	Hash            string                 `json:"hash"`
+	VectorType      string                 `json:"vector_type"`
+	ExpectedOutcome string                 `json:"expected_outcome"`
+	RejectionCode   *string                `json:"rejection_code"`
 }
 
 // VectorsFile is the top-level structure of vectors.json.
 type VectorsFile struct {
-	Vectors []TestVector `json:"vectors"`
+	SpecVersion    string       `json:"spec_version"`
+	VectorsVersion string       `json:"vectors_version"`
+	Vectors        []TestVector `json:"vectors"`
 }
 
 // VerifyResult holds the result of verifying a single vector.
@@ -48,27 +54,71 @@ func VerifyVectors(path string) ([]VerifyResult, error) {
 		return nil, fmt.Errorf("failed to parse vectors file: %w", err)
 	}
 
-	results := make([]VerifyResult, len(vf.Vectors))
+	results := make([]VerifyResult, 0, len(vf.Vectors))
 	var failures int
 
-	for i, vec := range vf.Vectors {
+	for _, vec := range vf.Vectors {
+		if vec.VectorType == "negative" {
+			// Negative vectors: expect an error during ingest or hashing
+			obj, err := inputToMemoryObject(vec.Input)
+			if err != nil {
+				// Correctly rejected at ingest
+				pass := vec.RejectionCode != nil && strings.Contains(err.Error(), *vec.RejectionCode)
+				results = append(results, VerifyResult{
+					Name:     vec.VectorID,
+					Expected: "REJECT",
+					Got:      err.Error(),
+					Pass:     pass,
+				})
+				if !pass {
+					failures++
+				}
+				continue
+			}
+			_, err = hash.ContentHash(obj)
+			if err != nil {
+				// Correctly rejected at hash time
+				pass := vec.RejectionCode != nil && strings.Contains(err.Error(), *vec.RejectionCode)
+				results = append(results, VerifyResult{
+					Name:     vec.VectorID,
+					Expected: "REJECT",
+					Got:      err.Error(),
+					Pass:     pass,
+				})
+				if !pass {
+					failures++
+				}
+				continue
+			}
+			// Should have been rejected but wasn't
+			results = append(results, VerifyResult{
+				Name:     vec.VectorID,
+				Expected: "REJECT",
+				Got:      "ACCEPT (unexpected)",
+				Pass:     false,
+			})
+			failures++
+			continue
+		}
+
+		// Positive vectors: expect successful hashing with matching hash
 		obj, err := inputToMemoryObject(vec.Input)
 		if err != nil {
-			return nil, fmt.Errorf("vector %q: %w", vec.Name, err)
+			return nil, fmt.Errorf("vector %q: %w", vec.VectorID, err)
 		}
 
 		got, err := hash.ContentHash(obj)
 		if err != nil {
-			return nil, fmt.Errorf("vector %q hash failed: %w", vec.Name, err)
+			return nil, fmt.Errorf("vector %q hash failed: %w", vec.VectorID, err)
 		}
 
-		pass := got == vec.ExpectedContentHash
-		results[i] = VerifyResult{
-			Name:     vec.Name,
-			Expected: vec.ExpectedContentHash,
+		pass := got == vec.Hash
+		results = append(results, VerifyResult{
+			Name:     vec.VectorID,
+			Expected: vec.Hash,
 			Got:      got,
 			Pass:     pass,
-		}
+		})
 
 		if !pass {
 			failures++
@@ -83,7 +133,13 @@ func VerifyVectors(path string) ([]VerifyResult, error) {
 }
 
 // inputToMemoryObject converts a raw JSON map into a MemoryObject.
+// Validates ingest rules: RULE-002 (no floats), RULE-009 (integer range), RULE-010 (no nulls).
 func inputToMemoryObject(input map[string]interface{}) (object.MemoryObject, error) {
+	// Ingest validation — check the raw parsed value for spec violations
+	if err := canon.ValidateIngestValue(input["value"]); err != nil {
+		return object.MemoryObject{}, err
+	}
+
 	obj := object.MemoryObject{}
 
 	if v, ok := input["category"].(string); ok {

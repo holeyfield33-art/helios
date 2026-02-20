@@ -1,7 +1,10 @@
 {
+  "spec_version": "1",
+  "vectors_version": "3",
+  "frozen_date": "2026-02-20",
   "vectors": [
     {
-      "name": "basic",
+      "vector_id": "POS-001",
       "description": "Basic memory object with all standard fields",
       "input": {
         "category": "project",
@@ -13,10 +16,26 @@
         "source": "user",
         "value": "This is a test memory for hash verification."
       },
-      "expected_content_hash": "cae6f0ca521caeb1f74470aeca5a75ff1fe098809a034e8a15e0eb4762b4f485"
+      "canonical_input": {
+        "_helios_schema_version": "1",
+        "category": "project",
+        "created_at": "2025-01-15T10:30:00.000Z",
+        "key": "test/basic_memory",
+        "relationships": [
+          {"key": "project/helios", "type": "related_to"}
+        ],
+        "source": "user",
+        "value": "This is a test memory for hash verification."
+      },
+      "canonical_json": "{\"_helios_schema_version\":\"1\",\"category\":\"project\",\"created_at\":\"2025-01-15T10:30:00.000Z\",\"key\":\"test/basic_memory\",\"relationships\":[{\"key\":\"project/helios\",\"type\":\"related_to\"}],\"source\":\"user\",\"value\":\"This is a test memory for hash verification.\"}",
+      "hash": "c3262407645dcdbd1cede212fa0448a3adb2f915f762540c32e0050bbf65e781",
+      "rule_coverage": ["RULE-001", "RULE-003", "RULE-004", "RULE-006", "RULE-007", "RULE-008"],
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
     },
     {
-      "name": "key_ordering",
+      "vector_id": "POS-002",
       "description": "Verifies keys are sorted lexicographically regardless of input order",
       "input": {
         "value": "Key ordering test value",
@@ -26,10 +45,24 @@
         "category": "config",
         "relationships": []
       },
-      "expected_content_hash": "437573e624f5c2a8ffbd08e7e1f8d5491b1bf0fad7287d989e1e50be19c00a0f"
+      "canonical_input": {
+        "_helios_schema_version": "1",
+        "category": "config",
+        "created_at": "2025-06-01T00:00:00.000Z",
+        "key": "test/key_ordering",
+        "relationships": [],
+        "source": "system",
+        "value": "Key ordering test value"
+      },
+      "canonical_json": "{\"_helios_schema_version\":\"1\",\"category\":\"config\",\"created_at\":\"2025-06-01T00:00:00.000Z\",\"key\":\"test/key_ordering\",\"relationships\":[],\"source\":\"system\",\"value\":\"Key ordering test value\"}",
+      "hash": "694cafaa80dd0121a4c4415ac44793fee17104d02756b3c1456dd79fc467c1d0",
+      "rule_coverage": ["RULE-001", "RULE-004", "RULE-006", "RULE-007"],
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
     },
     {
-      "name": "unicode_normalization",
+      "vector_id": "POS-003",
       "description": "Verifies NFC normalization produces consistent hash for NFD input",
       "input": {
         "category": "test",
@@ -39,23 +72,24 @@
         "source": "user",
         "value": "caf\u00e9 r\u00e9sum\u00e9"
       },
-      "expected_content_hash": "68e92122b2993e8c8a416dabe8c1af18dbb4621760d9c569abc0c0621e064732"
-    },
-    {
-      "name": "null_value",
-      "description": "Verifies null value is included in hash (not omitted)",
-      "input": {
-        "category": "placeholder",
-        "created_at": "2025-07-04T12:00:00.000Z",
-        "key": "test/null_value",
+      "canonical_input": {
+        "_helios_schema_version": "1",
+        "category": "test",
+        "created_at": "2025-03-20T14:15:00.000Z",
+        "key": "test/unicode_caf\u00e9",
         "relationships": [],
-        "source": "system",
-        "value": null
+        "source": "user",
+        "value": "caf\u00e9 r\u00e9sum\u00e9"
       },
-      "expected_content_hash": "7b23e07bdb8fb414ac689b62f78c790bbbce9abeb433f018e8c5883097a6e845"
+      "canonical_json": "{\"_helios_schema_version\":\"1\",\"category\":\"test\",\"created_at\":\"2025-03-20T14:15:00.000Z\",\"key\":\"test/unicode_caf\u00e9\",\"relationships\":[],\"source\":\"user\",\"value\":\"caf\u00e9 r\u00e9sum\u00e9\"}",
+      "hash": "d7b4f1c46600c6b7f6733e866455cfa3c5646b6e63625a2107a6a57a36be486c",
+      "rule_coverage": ["RULE-001", "RULE-003", "RULE-004", "RULE-006", "RULE-007"],
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
     },
     {
-      "name": "relationship_sorting",
+      "vector_id": "POS-004",
       "description": "Verifies relationships are sorted by key then type",
       "input": {
         "category": "workflow",
@@ -69,7 +103,223 @@
         "source": "user",
         "value": "Testing relationship sort order"
       },
-      "expected_content_hash": "11d3af8b06e69c463484cbd36dc3ee880fb74c6459285515200a87a8ba1f9452"
+      "canonical_input": {
+        "_helios_schema_version": "1",
+        "category": "workflow",
+        "created_at": "2025-02-28T08:45:00.000Z",
+        "key": "test/relationship_sorting",
+        "relationships": [
+          {"key": "a_module", "type": "blocks"},
+          {"key": "a_module", "type": "related_to"},
+          {"key": "z_module", "type": "depends_on"}
+        ],
+        "source": "user",
+        "value": "Testing relationship sort order"
+      },
+      "canonical_json": "{\"_helios_schema_version\":\"1\",\"category\":\"workflow\",\"created_at\":\"2025-02-28T08:45:00.000Z\",\"key\":\"test/relationship_sorting\",\"relationships\":[{\"key\":\"a_module\",\"type\":\"blocks\"},{\"key\":\"a_module\",\"type\":\"related_to\"},{\"key\":\"z_module\",\"type\":\"depends_on\"}],\"source\":\"user\",\"value\":\"Testing relationship sort order\"}",
+      "hash": "5e43f9576ec448e9111856b8e0f95593e4aa427ba9ec71cb3a6b574a91719558",
+      "rule_coverage": ["RULE-001", "RULE-004", "RULE-006", "RULE-007"],
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
+    },
+    {
+      "vector_id": "POS-005",
+      "description": "Valid UTC millisecond timestamp with native boolean value",
+      "input": {
+        "category": "flags",
+        "created_at": "2025-12-25T23:59:59.999Z",
+        "key": "test/boolean_value",
+        "relationships": [],
+        "source": "system",
+        "value": true
+      },
+      "canonical_input": {
+        "_helios_schema_version": "1",
+        "category": "flags",
+        "created_at": "2025-12-25T23:59:59.999Z",
+        "key": "test/boolean_value",
+        "relationships": [],
+        "source": "system",
+        "value": true
+      },
+      "canonical_json": "{\"_helios_schema_version\":\"1\",\"category\":\"flags\",\"created_at\":\"2025-12-25T23:59:59.999Z\",\"key\":\"test/boolean_value\",\"relationships\":[],\"source\":\"system\",\"value\":true}",
+      "hash": "84c6d544a9ee3b9c1bd48a17d8835f25a7df62cd520f78f12fa49810b9e35945",
+      "rule_coverage": ["RULE-001", "RULE-005", "RULE-006", "RULE-007", "RULE-011"],
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
+    },
+    {
+      "vector_id": "NEG-001",
+      "description": "Float at top level — prohibited by RULE-002",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/float_top_level",
+        "relationships": [],
+        "source": "user",
+        "value": 3.14
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-002"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_FLOAT_PROHIBITED"
+    },
+    {
+      "vector_id": "NEG-002",
+      "description": "Float nested inside object — prohibited by RULE-002",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/float_nested",
+        "relationships": [],
+        "source": "user",
+        "value": {"temperature": 98.6}
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-002"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_FLOAT_PROHIBITED"
+    },
+    {
+      "vector_id": "NEG-003",
+      "description": "Scientific notation float — prohibited by RULE-002",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/float_scientific",
+        "relationships": [],
+        "source": "user",
+        "value": 1e10
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-002"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_FLOAT_PROHIBITED"
+    },
+    {
+      "vector_id": "NEG-004",
+      "description": "Null at top level value — prohibited by RULE-010",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/null_top_level",
+        "relationships": [],
+        "source": "user",
+        "value": null
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-010"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_NULL_PROHIBITED"
+    },
+    {
+      "vector_id": "NEG-005",
+      "description": "Null nested inside value object — prohibited by RULE-010",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/null_nested",
+        "relationships": [],
+        "source": "user",
+        "value": {"data": null}
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-010"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_NULL_PROHIBITED"
+    },
+    {
+      "vector_id": "NEG-006",
+      "description": "Integer exceeds int64 max — prohibited by RULE-009",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/int_overflow_positive",
+        "relationships": [],
+        "source": "user",
+        "value": 9223372036854775808
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-009"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_INTEGER_OUT_OF_RANGE"
+    },
+    {
+      "vector_id": "NEG-007",
+      "description": "Integer below int64 min — prohibited by RULE-009",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000Z",
+        "key": "test/int_overflow_negative",
+        "relationships": [],
+        "source": "user",
+        "value": -9223372036854775809
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-009"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_INTEGER_OUT_OF_RANGE"
+    },
+    {
+      "vector_id": "NEG-008",
+      "description": "Timestamp with non-UTC offset — prohibited by RULE-005",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.000+05:00",
+        "key": "test/timestamp_non_utc",
+        "relationships": [],
+        "source": "user",
+        "value": "test"
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-005"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_TIMESTAMP_NON_UTC"
+    },
+    {
+      "vector_id": "NEG-009",
+      "description": "Timestamp with wrong precision (4 decimal digits) — prohibited by RULE-005",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-01T00:00:00.1234Z",
+        "key": "test/timestamp_wrong_precision",
+        "relationships": [],
+        "source": "user",
+        "value": "test"
+      },
+      "canonical_input": null,
+      "canonical_json": null,
+      "hash": null,
+      "rule_coverage": ["RULE-005"],
+      "vector_type": "negative",
+      "expected_outcome": "REJECT",
+      "rejection_code": "CANON_ERR_TIMESTAMP_INVALID_PRECISION"
     }
   ]
 }
