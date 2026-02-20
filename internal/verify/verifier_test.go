@@ -1,0 +1,116 @@
+package verify
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestVerifierExitsOnHashMismatch(t *testing.T) {
+	// Create a temp vector file with a deliberately wrong hash (64 zeros)
+	vectorJSON := `{
+  "vectors": [
+    {
+      "name": "deliberate_mismatch",
+      "description": "Vector with wrong expected hash",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-15T10:30:00.000Z",
+        "key": "test/mismatch",
+        "relationships": [],
+        "source": "user",
+        "value": "test value"
+      },
+      "expected_content_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}`
+
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "bad_vectors.json")
+	if err := os.WriteFile(path, []byte(vectorJSON), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := VerifyVectors(path)
+	if err == nil {
+		t.Fatal("expected error for hash mismatch, got nil")
+	}
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Pass {
+		t.Error("expected result to be a failure")
+	}
+
+	if results[0].Got == "0000000000000000000000000000000000000000000000000000000000000000" {
+		t.Error("computed hash should not be all zeros")
+	}
+}
+
+func TestVerifierPassesOnCorrectHash(t *testing.T) {
+	// First compute the actual hash, then create a vector with it
+	vectorJSON := `{
+  "vectors": [
+    {
+      "name": "self_check",
+      "description": "Compute hash then verify",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-15T10:30:00.000Z",
+        "key": "test/self_check",
+        "relationships": [],
+        "source": "user",
+        "value": "hello world"
+      },
+      "expected_content_hash": "PLACEHOLDER"
+    }
+  ]
+}`
+
+	// Write with placeholder, run to get hash, rewrite with real hash
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "vectors.json")
+	if err := os.WriteFile(path, []byte(vectorJSON), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Get the actual hash from first run
+	results, _ := VerifyVectors(path)
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	actualHash := results[0].Got
+
+	// Rewrite with correct hash
+	correctedJSON := `{
+  "vectors": [
+    {
+      "name": "self_check",
+      "description": "Compute hash then verify",
+      "input": {
+        "category": "test",
+        "created_at": "2025-01-15T10:30:00.000Z",
+        "key": "test/self_check",
+        "relationships": [],
+        "source": "user",
+        "value": "hello world"
+      },
+      "expected_content_hash": "` + actualHash + `"
+    }
+  ]
+}`
+	if err := os.WriteFile(path, []byte(correctedJSON), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	results2, err := VerifyVectors(path)
+	if err != nil {
+		t.Fatalf("expected pass, got error: %v", err)
+	}
+	if len(results2) != 1 || !results2[0].Pass {
+		t.Error("expected verification to pass")
+	}
+}
