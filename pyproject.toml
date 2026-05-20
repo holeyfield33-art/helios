@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helios-core"
+version = "1.0.0"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+helios-verify = "conformance.verifier:main"
+
+[tool.setuptools]
+package-dir = {"" = "implementations/python"}
+packages = ["conformance"]
