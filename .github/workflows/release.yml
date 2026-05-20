@@ -1,31 +1,96 @@
 name: Release
+
 'on':
   push:
-    tags: [v*]
+    tags:
+      - "v*"
+
 permissions:
   contents: write
+
 jobs:
-  create-release:
+  build-go-binaries:
+    name: Build Go Binaries
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - uses: actions/setup-python@v5
+
+      - name: Build binary
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          OS=${{ matrix.goos }}
+          ARCH=${{ matrix.goarch }}
+          EXT=""
+          [[ "$OS" == "windows" ]] && EXT=".exe"
+          OUTPUT="helios-${VERSION}-${OS}-${ARCH}${EXT}"
+          CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH \
+            go build -o "$OUTPUT" ./cmd/helios/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          python-version: '3.11'
-      - run: pip install build
-      - run: |
-          mkdir dist
-          for GOOS in linux darwin windows; do
-            for GOARCH in amd64 arm64; do
-              EXT=""
-              [[ "$GOOS" == "windows" ]] && EXT=".exe"
-              CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o "dist/helios-${GITHUB_REF#refs/tags/}-$GOOS-$GOARCH$EXT" ./cmd/helios/
-            done
-          done
-      - run: python -m build --outdir dist
-      - uses: softprops/action-gh-release@v1
+          name: go-binary-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: helios-*
+          retention-days: 1
+
+  build-python-package:
+    name: Build Python Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          files: dist/*
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-packages
+          path: dist/
+          retention-days: 1
+
+  create-release:
+    name: Create GitHub Release
+    needs:
+      - build-go-binaries
+      - build-python-package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          find release-artifacts -type f -name "helios-*" \
+            -exec cp {} release/ \;
+          find release-artifacts -type f \
+            \( -name "*.whl" -o -name "*.tar.gz" \) \
+            -exec cp {} release/ \;
+          ls -lah release/
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*

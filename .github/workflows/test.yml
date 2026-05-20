@@ -1,6 +1,6 @@
 name: CI
 
-on:
+'on':
   push:
     branches:
       - main
@@ -18,6 +18,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Run Go vet
+        run: go vet ./...
       - name: Run Go tests
         run: go test ./...
 
@@ -37,4 +39,4 @@ jobs:
       - name: Install package and test dependencies
         run: pip install -e .[test]
       - name: Run Python tests
-        run: pytest implementations/python/tests -v
+        run: pytest implementations/python/tests -W error -v

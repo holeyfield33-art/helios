@@ -5,9 +5,32 @@
 
 set -euo pipefail
 
-VECTORS="/app/test_vectors/vectors.json"
-GO_BIN="/usr/local/bin/helios"
-PYTHON_SCRIPT="/app/implementations/python/verify.py"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [ -f "/app/test_vectors/vectors.json" ]; then
+    VECTORS="/app/test_vectors/vectors.json"
+else
+    VECTORS="$ROOT_DIR/test_vectors/vectors.json"
+fi
+
+if [ -x "/usr/local/bin/helios" ]; then
+    GO_BIN="/usr/local/bin/helios"
+elif [ -x "$ROOT_DIR/helios" ]; then
+    GO_BIN="$ROOT_DIR/helios"
+else
+    GO_BIN=""
+fi
+
+if [ -f "/app/implementations/python/verify.py" ]; then
+    PYTHON_SCRIPT="/app/implementations/python/verify.py"
+else
+    PYTHON_SCRIPT="$ROOT_DIR/implementations/python/verify.py"
+fi
+
+if [ -z "$GO_BIN" ]; then
+    echo "ERROR: Go binary not found. Build it with: go build -o helios ./cmd/helios/"
+    exit 1
+fi
 
 echo "=== Helios Core Cross-Language Verification ==="
 echo ""
@@ -22,7 +45,7 @@ GO_OUTPUT=$("$GO_BIN" verify "$VECTORS" 2>&1) || {
 echo "$GO_OUTPUT"
 
 # Extract Go result lines (trimmed, sorted by vector name)
-GO_RESULTS=$(echo "$GO_OUTPUT" | grep -E "^\s+\w+:" | sed 's/^[[:space:]]*//' | sort)
+GO_RESULTS=$(echo "$GO_OUTPUT" | grep -E "^[[:space:]]+[a-zA-Z0-9_-]+:" | sed 's/^[[:space:]]*//' | sort)
 
 echo ""
 
@@ -41,7 +64,7 @@ PYTHON_OUTPUT=$(python3 "$PYTHON_SCRIPT" "$VECTORS" 2>&1) || {
 echo "$PYTHON_OUTPUT"
 
 # Extract Python result lines (trimmed, sorted by vector name)
-PYTHON_RESULTS=$(echo "$PYTHON_OUTPUT" | grep -E "^\s+\w+:" | sed 's/^[[:space:]]*//' | sort)
+PYTHON_RESULTS=$(echo "$PYTHON_OUTPUT" | grep -E "^[[:space:]]+[a-zA-Z0-9_-]+:" | sed 's/^[[:space:]]*//' | sort)
 
 echo ""
 

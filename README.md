@@ -108,6 +108,12 @@ Only 6 fields are included in the content hash:
 # Build
 go build -o helios ./cmd/helios/
 
+# Install local commit/push guards (once per clone)
+bash scripts/install_hooks.sh
+
+# Run the full quality gate (errors and warnings fail)
+bash scripts/quality_gate.sh
+
 # Hash a memory object
 ./helios hash input.json
 
