@@ -11,6 +11,7 @@ This specification defines a deterministic serialization format for AI memory ob
 ## 2. Scope
 
 This specification covers:
+
 - Canonical JSON serialization rules
 - Unicode normalization requirements
 - Timestamp format requirements
@@ -20,21 +21,27 @@ This specification covers:
 ## 3. Canonical JSON Rules
 
 ### 3.1 Key Ordering
+
 All object keys MUST be sorted lexicographically (Unicode code point order) at every nesting level.
 
 ### 3.2 Whitespace
+
 The canonical form MUST use compact JSON with no whitespace between tokens. No spaces after colons, no spaces after commas, no newlines.
 
 ### 3.3 Null Values
+
 Null field values are prohibited at ingest. Implementations MUST raise CANON_ERR_NULL_PROHIBITED when encountering a null field value.
 
 ### 3.4 Arrays
+
 Array elements MUST preserve their insertion order. Arrays MUST NOT be sorted unless explicitly specified (e.g., relationships).
 
 ### 3.5 UTF-8 Encoding
+
 All string values MUST be serialized as raw UTF-8 bytes. Non-ASCII characters MUST NOT be escaped to `\uXXXX` form. Only characters required by the JSON specification to be escaped (control characters, backslash, double quote) are escaped.
 
 ### 3.6 Empty Arrays
+
 Empty arrays serialize as `[]`, not `null`. They are included in the hash input.
 
 ## 4. Unicode Normalization
@@ -42,6 +49,7 @@ Empty arrays serialize as `[]`, not `null`. They are included in the hash input.
 All string field VALUES MUST be normalized to NFC (Unicode Normalization Form C) BEFORE serialization. This ensures that equivalent Unicode representations (e.g., precomposed vs. decomposed characters) produce identical canonical bytes.
 
 Normalization applies to:
+
 - `category`
 - `key`
 - `source`
@@ -54,11 +62,12 @@ Normalization MUST occur on input values, NOT on output bytes.
 
 All timestamps MUST conform to this exact format:
 
-```
+```text
 YYYY-MM-DDTHH:MM:SS.sssZ
 ```
 
 Requirements:
+
 - MUST end with `Z` (UTC only)
 - MUST have EXACTLY 3 fractional second digits (millisecond precision)
 - Timestamps with fewer or more fractional digits MUST be rejected
@@ -73,7 +82,7 @@ Float values in test vectors are chosen such that their shortest round-trip deci
 ### 7.1 Included Fields (exactly 6)
 
 | Field | Type | Description |
-|-------|------|-------------|
+| --- | --- | --- |
 | `category` | string | Object category |
 | `created_at` | string | Creation timestamp (canonical format) |
 | `key` | string | Unique object key |
@@ -84,6 +93,7 @@ Float values in test vectors are chosen such that their shortest round-trip deci
 ### 7.2 Excluded Fields
 
 The following fields are NOT included in the content hash:
+
 - `updated_at`
 - `version`
 - `access_count`
@@ -106,14 +116,16 @@ The following fields are NOT included in the content hash:
 Each relationship is an object with exactly two fields: `key` and `type`.
 
 ### 8.1 Sorting
+
 Relationships MUST be sorted by `key` (lexicographic), with `type` as a tie-breaker when keys are equal.
 
 ### 8.2 Serialization
+
 Each relationship MUST be serialized as an explicit map with sorted keys: `{"key":"...","type":"..."}`. Implementations MUST NOT rely on struct field ordering.
 
 ## 9. Content Hash Algorithm
 
-```
+```text
 canonical_bytes = canonicalize(hash_input_map)
 content_hash = hex(sha256(canonical_bytes))
 ```
