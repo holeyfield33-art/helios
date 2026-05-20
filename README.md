@@ -4,33 +4,46 @@
 
 **Canonical serialization spec and content hash for AI memory objects.**
 
-Designed collaboratively by Claude (Anthropic) and ChatGPT (OpenAI) via TMRP. Built by GitHub Copilot.
-
 ## What It Does
 
-Helios Core produces a deterministic, verifiable SHA-256 content hash for AI memory objects. The hash proves an object hasn't been modified — and it's identical across Go and Python implementations.
+Helios Core produces a deterministic, verifiable SHA-256 content hash for AI
+memory objects. The hash proves an object hasn't been modified — and it's
+identical across Go and Python implementations.
 
 ## Frozen Test Vector Hashes
 
 ```text
 $ helios verify test_vectors/vectors.json
 
-  basic:                   PASS
-  key_ordering:            PASS
-  unicode_normalization:   PASS
-  null_value:              PASS
-  relationship_sorting:    PASS
+  POS-001:                 PASS
+  POS-002:                 PASS
+  POS-003:                 PASS
+  POS-004:                 PASS
+  POS-005:                 PASS
+  NEG-001:                 PASS
+  NEG-002:                 PASS
+  NEG-003:                 PASS
+  NEG-004:                 PASS
+  NEG-005:                 PASS
+  NEG-006:                 PASS
+  NEG-007:                 PASS
+  NEG-008:                 PASS
+  NEG-009:                 PASS
+  NEG-010:                 PASS
+  NEG-011:                 PASS
+  NEG-012:                 PASS
 
-All 5 vectors: PASS
+All 17 vectors: PASS
 ```
 
 | Vector | SHA-256 Content Hash (64 chars) |
 | ------ | -------------------------------- |
-| basic | `cae6f0ca521caeb1f74470aeca5a75ff1fe098809a034e8a15e0eb4762b4f485` |
-| key_ordering | `437573e624f5c2a8ffbd08e7e1f8d5491b1bf0fad7287d989e1e50be19c00a0f` |
-| unicode_normalization | `68e92122b2993e8c8a416dabe8c1af18dbb4621760d9c569abc0c0621e064732` |
-| null_value | `7b23e07bdb8fb414ac689b62f78c790bbbce9abeb433f018e8c5883097a6e845` |
-| relationship_sorting | `11d3af8b06e69c463484cbd36dc3ee880fb74c6459285515200a87a8ba1f9452` |
+| POS-001 | `c3262407645dcdbd1cede212fa0448a3adb2f915f762540c32e0050bbf65e781` |
+| POS-002 | `694cafaa80dd0121a4c4415ac44793fee17104d02756b3c1456dd79fc467c1d0` |
+| POS-003 | `d7b4f1c46600c6b7f6733e866455cfa3c5646b6e63625a2107a6a57a36be486c` |
+| POS-004 | `5e43f9576ec448e9111856b8e0f95593e4aa427ba9ec71cb3a6b574a91719558` |
+| POS-005 | `84c6d544a9ee3b9c1bd48a17d8835f25a7df62cd520f78f12fa49810b9e35945` |
+| NEG-001..NEG-012 | Rejection vectors, no expected hash |
 
 ## Cross-Language Verification
 
@@ -38,13 +51,13 @@ All 5 vectors: PASS
 === Helios Core Cross-Language Verification ===
 
 --- Go Implementation ---
-  All 5 vectors: PASS
+  All 17 vectors: PASS
 
 --- Python Implementation ---
-  All 5 vectors: PASS
+  All 17 vectors: PASS
 
 --- Cross-Language Comparison ---
-Cross-language match: 5/5 identical hashes
+Cross-language match: 17/17 identical outcomes
 
 === Verification Complete ===
 ```
@@ -62,7 +75,7 @@ helios/
 ├── implementations/python/
 │   ├── conformance/                 # Python conformance harness
 │   └── verify.py                    # Python entry point
-├── test_vectors/vectors.json        # 5 frozen test vectors
+├── test_vectors/vectors.json        # 17 frozen test vectors
 ├── spec/
 │   ├── canonical-serialization.md   # Serialization spec
 │   └── integrity-boundary.md        # Hash boundary spec
@@ -109,7 +122,7 @@ docker run --rm helios-core
 
 - **Go:** 24 unit tests (canon, hash, verify + hardening)
 - **Python:** 31 unit tests (canon, hasher, guard)
-- **Cross-language:** 5/5 identical hashes verified in Docker
+- **Cross-language:** 17/17 identical outcomes verified in Docker
 
 ## Spec
 
