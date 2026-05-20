@@ -1,15 +1,94 @@
 # Helios Core
 
 ![CI](https://github.com/holeyfield33-art/helios/actions/workflows/test.yml/badge.svg)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PyPI version](https://img.shields.io/pypi/v/helios-core?logo=pypi&logoColor=white)](https://pypi.org/project/helios-core/)
 
-**Canonical serialization spec and content hash for AI memory objects.**
+Deterministic canonical serialization and SHA-256 content hashing for AI memory objects, with matching Go and Python implementations.
 
-## What It Does
+## Install
 
-Helios Core produces a deterministic, verifiable SHA-256 content hash for AI
-memory objects. The hash proves an object hasn't been modified — and it's
-identical across Go and Python implementations.
+```bash
+# Go CLI from source
+go build -o helios ./cmd/helios/
+
+# Python package
+pip install helios-core
+```
+
+## 30-Second Example
+
+```bash
+cat > memory.json <<'JSON'
+{
+  "category": "note",
+  "created_at": "2026-05-20T12:00:00Z",
+  "key": "demo",
+  "relationships": [],
+  "source": "docs",
+  "value": "hello world"
+}
+JSON
+
+./helios hash memory.json
+./helios verify test_vectors/vectors.json
+```
+
+```python
+from helios import hash_memory_object
+
+obj = {
+    "category": "note",
+    "created_at": "2026-05-20T12:00:00Z",
+    "key": "demo",
+    "relationships": [],
+    "source": "docs",
+    "value": "hello world",
+}
+
+print(hash_memory_object(obj))
+```
+
+## Practical Integrations
+
+### pgvector
+
+Store the Helios hash beside each embedding so you can verify the memory record before retrieval or reuse:
+
+```sql
+CREATE TABLE memory_embeddings (
+  id uuid PRIMARY KEY,
+  helios_hash text NOT NULL,
+  embedding vector(1536) NOT NULL,
+  payload jsonb NOT NULL
+);
+```
+
+### LangChain Memory
+
+Wrap each memory snapshot in a Helios object before writing it to a checkpoint or chat history store. The hash gives you a stable integrity key even if the backing store changes.
+
+### Custom Objects
+
+If your app already has a domain model, serialize it into the six included Helios fields, hash that record, and persist the hash next to the object:
+
+```python
+record = {
+    "category": "profile",
+    "created_at": user.created_at.isoformat().replace("+00:00", "Z"),
+    "key": user.id,
+    "relationships": [],
+    "source": "app-db",
+    "value": {
+        "name": user.name,
+        "plan": user.plan,
+    },
+}
+```
+
+## Why Helios
+
+Helios produces a deterministic, verifiable SHA-256 hash for AI memory objects. The hash proves the object has not changed, and the Go and Python implementations are checked against the same frozen vectors.
 
 ## Frozen Test Vector Hashes
 
@@ -63,27 +142,6 @@ Cross-language match: 17/17 identical outcomes
 === Verification Complete ===
 ```
 
-## Project Structure
-
-```text
-helios/
-├── cmd/helios/main.go              # CLI: helios hash / helios verify
-├── internal/
-│   ├── canon/serializer.go          # Canonical serialization primitives
-│   ├── object/memory_object.go      # MemoryObject + HashInput structs
-│   ├── hash/hasher.go               # SHA-256 content hash
-│   └── verify/verifier.go           # Test vector verification
-├── implementations/python/
-│   ├── conformance/                 # Python conformance harness
-│   └── verify.py                    # Python entry point
-├── test_vectors/vectors.json        # 17 frozen test vectors
-├── spec/
-│   ├── canonical-serialization.md   # Serialization spec
-│   └── integrity-boundary.md        # Hash boundary spec
-├── docker/Dockerfile                # Multi-stage Go + Python
-└── scripts/cross_check.sh           # Cross-language comparison
-```
-
 ## Hash Boundary
 
 Only 6 fields are included in the content hash:
@@ -105,20 +163,11 @@ Only 6 fields are included in the content hash:
 ## Quick Start
 
 ```bash
-# Build
-go build -o helios ./cmd/helios/
-
 # Install local commit/push guards (once per clone)
 bash scripts/install_hooks.sh
 
 # Run the full quality gate (errors and warnings fail)
 bash scripts/quality_gate.sh
-
-# Hash a memory object
-./helios hash input.json
-
-# Verify test vectors
-./helios verify test_vectors/vectors.json
 
 # Docker cross-language check
 docker build -f docker/Dockerfile -t helios-core .
@@ -130,6 +179,27 @@ docker run --rm helios-core
 - **Go:** 24 unit tests (canon, hash, verify + hardening)
 - **Python:** 31 unit tests (canon, hasher, guard)
 - **Cross-language:** 17/17 identical outcomes verified in Docker
+
+## Project Structure
+
+```text
+helios/
+├── cmd/helios/main.go              # CLI: helios hash / helios verify
+├── internal/
+│   ├── canon/serializer.go          # Canonical serialization primitives
+│   ├── object/memory_object.go      # MemoryObject + HashInput structs
+│   ├── hash/hasher.go               # SHA-256 content hash
+│   └── verify/verifier.go           # Test vector verification
+├── implementations/python/
+│   ├── conformance/                 # Python conformance harness
+│   └── verify.py                    # Python entry point
+├── test_vectors/vectors.json        # 17 frozen test vectors
+├── spec/
+│   ├── canonical-serialization.md   # Serialization spec
+│   └── integrity-boundary.md        # Hash boundary spec
+├── docker/Dockerfile                # Multi-stage Go + Python
+└── scripts/cross_check.sh           # Cross-language comparison
+```
 
 ## Spec
 
