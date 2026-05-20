@@ -11,6 +11,8 @@ import (
 	"github.com/holeyfield33-art/helios/internal/verify"
 )
 
+var version = "1.0.0"
+
 func main() {
 	if len(os.Args) < 2 {
 		printUsage()
@@ -18,6 +20,9 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "--version", "-v":
+		fmt.Printf("helios %s\n", version)
+		return
 	case "hash":
 		if len(os.Args) < 3 {
 			fmt.Fprintln(os.Stderr, "Usage: helios hash <file.json>")
@@ -49,6 +54,7 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "Usage:")
 	fmt.Fprintln(os.Stderr, "  helios hash <file.json>      Compute content hash for a memory object")
 	fmt.Fprintln(os.Stderr, "  helios verify <vectors.json>  Verify test vectors")
+	fmt.Fprintln(os.Stderr, "  helios --version             Show version")
 }
 
 func runHash(path string) error {

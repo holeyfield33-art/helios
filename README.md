@@ -1,6 +1,7 @@
 # Helios Core
 
 ![CI](https://github.com/holeyfield33-art/helios/actions/workflows/test.yml/badge.svg)
+[![PyPI version](https://img.shields.io/pypi/v/helios-core?logo=pypi&logoColor=white)](https://pypi.org/project/helios-core/)
 
 **Canonical serialization spec and content hash for AI memory objects.**
 

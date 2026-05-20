@@ -1,152 +1,31 @@
 name: Release
-
-on:
+'on':
   push:
-    tags:
-      - 'v*'
-
+    tags: [v*]
 permissions:
   contents: write
-
 jobs:
-  build-go-binaries:
-    name: Build Go Binaries
+  create-release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-
-      - name: Build binary
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          OS=${{ matrix.goos }}
-          ARCH=${{ matrix.goarch }}
-          EXT=""
-          [[ "$OS" == "windows" ]] && EXT=".exe"
-          OUTPUT="helios-${VERSION}-${OS}-${ARCH}${EXT}"
-          CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH go build -o "$OUTPUT" -ldflags "-X main.version=$VERSION" ./cmd/helios/
-          echo "BINARY=$OUTPUT" >> $GITHUB_ENV
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: go-binary-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: helios-*
-          retention-days: 1
-
-  build-python-package:
-    name: Build Python Package
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Install build tools
-        run: pip install build
-
-      - name: Build wheel and sdist
-        run: python -m build
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - run: pip install build
+      - run: |
+          mkdir dist
+          for GOOS in linux darwin windows; do
+            for GOARCH in amd64 arm64; do
+              EXT=""
+              [[ "$GOOS" == "windows" ]] && EXT=".exe"
+              CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o "dist/helios-${GITHUB_REF#refs/tags/}-$GOOS-$GOARCH$EXT" ./cmd/helios/
+            done
+          done
+      - run: python -m build --outdir dist
+      - uses: softprops/action-gh-release@v1
         with:
-          name: python-packages
-          path: dist/
-          retention-days: 1
-
-  create-release:
-    name: Create GitHub Release
-    needs: [build-go-binaries, build-python-package]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release-artifacts
-
-      - name: Prepare release assets
-        run: |
-          mkdir -p release
-          find release-artifacts -type f -name "helios-*" -exec cp {} release/ \;
-          find release-artifacts -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release/ \;
-          ls -lah release/
-
-      - name: Generate release notes
-        id: release_notes
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          cat > RELEASE_NOTES.md << 'EOF'
-          ## ${{ github.ref }} Release
-          
-          ### Artifacts
-          - **Go binaries**: helios-${VERSION}-{linux,darwin,windows}-{amd64,arm64}
-          - **Python package**: helios-core-${VERSION}-py3-none-any.whl and .tar.gz
-          
-          ### Verification
-          All binaries and packages have been verified against 17 frozen test vectors (5 positive, 12 negative).
-          
-          ### Installation
-          **Go:** Download the appropriate binary for your OS/architecture.
-          **Python:** `pip install helios-core==${VERSION}` (or build from source tarball)
-          
-          See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development setup and cross-language verification.
-          EOF
-
-      - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Assets
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const releaseDir = './release';
-            
-            // Get the release we just created
-            const releases = await github.rest.repos.listReleases({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-            const release = releases.data[0];
-            
-            // Upload all files
-            const files = fs.readdirSync(releaseDir);
-            for (const file of files) {
-              if (file === '.gitkeep') continue;
-              const filePath = path.join(releaseDir, file);
-              const fileContent = fs.readFileSync(filePath);
-              
-              await github.rest.repos.uploadReleaseAsset({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: release.id,
-                name: file,
-                data: fileContent,
-              });
-            }
+          files: dist/*
