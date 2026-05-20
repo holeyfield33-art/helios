@@ -7,7 +7,7 @@ name = "helios-core"
 version = "1.0.0"
 description = "Deterministic canonical-serialization SHA-256 content hashing for AI memory objects. Cross-verified Go + Python reference implementations with frozen test vectors."
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
     {name = "Ashura Joseph Holeyfield", email = "holeyfield33art@users.noreply.github.com"},
@@ -42,16 +42,18 @@ test = [
 Repository = "https://github.com/holeyfield33-art/helios"
 Issues = "https://github.com/holeyfield33-art/helios/issues"
 Specification = "https://github.com/holeyfield33-art/helios/tree/main/spec"
+Documentation = "https://github.com/holeyfield33-art/helios#readme"
 
 [project.scripts]
 helios-verify = "conformance.verifier:main"
 
 [tool.setuptools.packages.find]
 where = ["implementations/python"]
-include = ["conformance*"]
+include = ["conformance*", "helios*"]
 
 [tool.setuptools.package-data]
 conformance = ["py.typed"]
+helios = ["py.typed"]
 
 [tool.pytest.ini_options]
 pythonpath = ["implementations/python"]

@@ -1,0 +1,59 @@
+name: Bug Report
+description: Report a defect in canonical serialization, hashing, or verification
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Helios is a frozen trust primitive—spec_version 1 is locked. Bugs that affect correctness of serialization or hash computation are critical.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is the bug? Be specific about which operation (hash, serialize, verify) fails.
+      placeholder: "Example: helios-verify rejects a valid vector with error CANON_ERR_FLOAT_PROHIBITED"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: How do you trigger the bug? Include CLI commands or code snippet.
+      placeholder: |
+        1. Create input JSON with...
+        2. Run `helios hash input.json`
+        3. Expected: hash matches vector; Actual: error XYZ
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Go version, Python version, OS, etc.
+      placeholder: |
+        Go: 1.21
+        Python: 3.11
+        OS: Ubuntu 22.04
+    validations:
+      required: true
+
+  - type: textarea
+    id: test_vector
+    attributes:
+      label: Test Case (if applicable)
+      description: Minimal failing input JSON or reference a frozen vector ID (POS-001..POS-005 or NEG-001..NEG-012).
+      placeholder: "Vector ID: POS-003"
+
+  - type: checkboxes
+    id: acknowledgments
+    attributes:
+      label: Acknowledgments
+      options:
+        - label: I have verified this against the latest main branch
+          required: true
+        - label: I understand this repo is a frozen primitive; spec changes are not accepted
+          required: true

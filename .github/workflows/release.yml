@@ -1,0 +1,31 @@
+name: Release
+'on':
+  push:
+    tags: [v*]
+permissions:
+  contents: write
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install build
+      - run: |
+          mkdir dist
+          for GOOS in linux darwin windows; do
+            for GOARCH in amd64 arm64; do
+              EXT=""
+              [[ "$GOOS" == "windows" ]] && EXT=".exe"
+              CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o "dist/helios-${GITHUB_REF#refs/tags/}-$GOOS-$GOARCH$EXT" ./cmd/helios/
+            done
+          done
+      - run: python -m build --outdir dist
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
