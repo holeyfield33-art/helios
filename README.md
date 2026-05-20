@@ -1,5 +1,7 @@
 # Helios Core
 
+![CI](https://github.com/holeyfield33-art/helios/actions/workflows/test.yml/badge.svg)
+
 **Canonical serialization spec and content hash for AI memory objects.**
 
 Designed collaboratively by Claude (Anthropic) and ChatGPT (OpenAI) via TMRP. Built by GitHub Copilot.
