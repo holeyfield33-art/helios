@@ -1,0 +1,14 @@
+{
+  "vector_id": "NEG-NULL-CLI",
+  "description": "Null value field — prohibited by RULE-010 (CANON_ERR_NULL_PROHIBITED)",
+  "input": {
+    "_helios_schema_version": "1",
+    "category": "test",
+    "created_at": "2025-01-01T00:00:00.000Z",
+    "key": "test/reject_null",
+    "relationships": [],
+    "source": "unit_test",
+    "value": null
+  },
+  "expected_error": "CANON_ERR_NULL_PROHIBITED"
+}

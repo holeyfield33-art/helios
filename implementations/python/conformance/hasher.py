@@ -8,6 +8,7 @@ from conformance.canon import (
     normalize_timestamp,
     relationship_to_map,
     sort_relationships,
+    validate_ingest_value,
 )
 from conformance.objects import MemoryObject, new_hash_input
 
@@ -24,6 +25,9 @@ def content_hash(obj: MemoryObject) -> str:
       6. Canonicalize → SHA-256 → hex
     """
     inp = new_hash_input(obj)
+
+    # Ingest validation: reject floats and nulls before any normalization (RULE-002, RULE-010)
+    validate_ingest_value(inp.value, "value")
 
     # Step 2: Normalize timestamp
     inp.created_at = normalize_timestamp(inp.created_at)

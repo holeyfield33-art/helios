@@ -1,0 +1,14 @@
+{
+  "vector_id": "NEG-FLOAT-CLI",
+  "description": "Float value field — prohibited by RULE-002 (CANON_ERR_FLOAT_PROHIBITED)",
+  "input": {
+    "_helios_schema_version": "1",
+    "category": "test",
+    "created_at": "2025-01-01T00:00:00.000Z",
+    "key": "test/reject_float",
+    "relationships": [],
+    "source": "unit_test",
+    "value": 3.14
+  },
+  "expected_error": "CANON_ERR_FLOAT_PROHIBITED"
+}

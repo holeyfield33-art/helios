@@ -26,7 +26,7 @@ All object keys MUST be sorted lexicographically (Unicode code point order) at e
 The canonical form MUST use compact JSON with no whitespace between tokens. No spaces after colons, no spaces after commas, no newlines.
 
 ### 3.3 Null Values
-Null values MUST be included in the serialized output. A field with value `null` serializes as `"field":null`. Fields MUST NOT be omitted when their value is null.
+Null field values are prohibited at ingest. Implementations MUST raise CANON_ERR_NULL_PROHIBITED when encountering a null field value.
 
 ### 3.4 Arrays
 Array elements MUST preserve their insertion order. Arrays MUST NOT be sorted unless explicitly specified (e.g., relationships).

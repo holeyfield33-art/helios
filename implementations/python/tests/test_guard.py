@@ -119,3 +119,43 @@ class TestHashStabilityAcrossExcludedFields:
         )
 
         assert content_hash(obj1) == content_hash(obj2)
+
+
+class TestContentHashRejectsFloat:
+    def test_content_hash_rejects_float(self):
+        """content_hash must raise CANON_ERR_FLOAT_PROHIBITED for a float value field."""
+        obj = MemoryObject(
+            category="test",
+            created_at="2025-01-01T00:00:00.000Z",
+            key="test/float_rejection",
+            relationships=[],
+            source="unit_test",
+            value=3.14,
+        )
+        try:
+            content_hash(obj)
+            assert False, "Expected CANON_ERR_FLOAT_PROHIBITED, but no exception was raised"
+        except ValueError as e:
+            assert "CANON_ERR_FLOAT_PROHIBITED" in str(e), (
+                f"Expected CANON_ERR_FLOAT_PROHIBITED, got: {e}"
+            )
+
+
+class TestContentHashRejectsNull:
+    def test_content_hash_rejects_null(self):
+        """content_hash must raise CANON_ERR_NULL_PROHIBITED for a null value field."""
+        obj = MemoryObject(
+            category="test",
+            created_at="2025-01-01T00:00:00.000Z",
+            key="test/null_rejection",
+            relationships=[],
+            source="unit_test",
+            value=None,
+        )
+        try:
+            content_hash(obj)
+            assert False, "Expected CANON_ERR_NULL_PROHIBITED, but no exception was raised"
+        except ValueError as e:
+            assert "CANON_ERR_NULL_PROHIBITED" in str(e), (
+                f"Expected CANON_ERR_NULL_PROHIBITED, got: {e}"
+            )

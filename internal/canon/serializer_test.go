@@ -386,3 +386,23 @@ func TestSchemaVersionAcceptsValid(t *testing.T) {
 		t.Errorf("expected schema version \"1\" to pass, got: %v", err)
 	}
 }
+
+// TestRunHashRejectsFloat verifies that the ingest validation used by the hash
+// CLI path rejects a float value field, matching the behaviour enforced in runHash.
+func TestRunHashRejectsFloat(t *testing.T) {
+	// Simulate the input map that runHash produces via json.Decoder with UseNumber.
+	raw := `{"_helios_schema_version":"1","category":"test","created_at":"2025-01-01T00:00:00.000Z","key":"test/float_cli","relationships":[],"source":"unit_test","value":3.14}`
+	dec := json.NewDecoder(strings.NewReader(raw))
+	dec.UseNumber()
+	var input map[string]interface{}
+	if err := dec.Decode(&input); err != nil {
+		t.Fatal(err)
+	}
+	err := ValidateIngestValue(input["value"])
+	if err == nil {
+		t.Fatal("expected CANON_ERR_FLOAT_PROHIBITED from runHash ingest path, got nil")
+	}
+	if !strings.Contains(err.Error(), "CANON_ERR_FLOAT_PROHIBITED") {
+		t.Errorf("expected CANON_ERR_FLOAT_PROHIBITED, got: %v", err)
+	}
+}

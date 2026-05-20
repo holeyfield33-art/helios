@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/holeyfield33-art/helios/internal/canon"
 	"github.com/holeyfield33-art/helios/internal/hash"
 	"github.com/holeyfield33-art/helios/internal/object"
 	"github.com/holeyfield33-art/helios/internal/verify"
@@ -69,6 +70,10 @@ func runHash(path string) error {
 	var input map[string]interface{}
 	if err := dec.Decode(&input); err != nil {
 		return fmt.Errorf("failed to parse JSON: %w", err)
+	}
+
+	if err := canon.ValidateIngestValue(input["value"]); err != nil {
+		return err
 	}
 
 	obj := mapToMemoryObject(input)
