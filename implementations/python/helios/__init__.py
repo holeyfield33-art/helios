@@ -18,15 +18,31 @@ Example:
     print(content_hash)  # SHA-256 hex digest
 """
 
-from conformance.hasher import hash_memory_object, MemoryObject
-from conformance.verifier import verify_vectors, VerificationResult
+from conformance.hasher import content_hash as _content_hash
+from conformance.hasher import MemoryObject
+from conformance.verifier import verify_vectors
+
+
+def hash_memory_object(obj):
+    """Hash a memory object and return its SHA-256 content hash as hex digest.
+    
+    Args:
+        obj: A MemoryObject or dict with required fields (category, created_at, key, relationships, source, value).
+        
+    Returns:
+        str: SHA-256 content hash (64-character hex digest).
+        
+    Raises:
+        ValueError: If the object violates spec constraints (e.g., floats, nulls).
+    """
+    return _content_hash(obj)
+
 
 __version__ = "1.0.0"
 __all__ = [
     "hash_memory_object",
     "MemoryObject",
     "verify_vectors",
-    "VerificationResult",
 ]
 
 __author__ = "Ashura Joseph Holeyfield"
