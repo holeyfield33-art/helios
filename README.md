@@ -1,4 +1,5 @@
 # Helios Core
+
 ![CI](https://github.com/holeyfield33-art/helios/actions/workflows/test.yml/badge.svg)
 
 **Canonical serialization spec and content hash for AI memory objects.**
@@ -11,7 +12,7 @@ Helios Core produces a deterministic, verifiable SHA-256 content hash for AI mem
 
 ## Frozen Test Vector Hashes
 
-```
+```text
 $ helios verify test_vectors/vectors.json
 
   basic:                   PASS
@@ -24,7 +25,7 @@ All 5 vectors: PASS
 ```
 
 | Vector | SHA-256 Content Hash (64 chars) |
-|--------|--------------------------------|
+| ------ | -------------------------------- |
 | basic | `cae6f0ca521caeb1f74470aeca5a75ff1fe098809a034e8a15e0eb4762b4f485` |
 | key_ordering | `437573e624f5c2a8ffbd08e7e1f8d5491b1bf0fad7287d989e1e50be19c00a0f` |
 | unicode_normalization | `68e92122b2993e8c8a416dabe8c1af18dbb4621760d9c569abc0c0621e064732` |
@@ -33,7 +34,7 @@ All 5 vectors: PASS
 
 ## Cross-Language Verification
 
-```
+```text
 === Helios Core Cross-Language Verification ===
 
 --- Go Implementation ---
@@ -50,7 +51,7 @@ Cross-language match: 5/5 identical hashes
 
 ## Project Structure
 
-```
+```text
 helios/
 ├── cmd/helios/main.go              # CLI: helios hash / helios verify
 ├── internal/
@@ -74,7 +75,7 @@ helios/
 Only 6 fields are included in the content hash:
 
 | Field | Included |
-|-------|----------|
+| ----- | -------- |
 | `category` | Yes |
 | `created_at` | Yes |
 | `key` | Yes |
