@@ -1,0 +1,48 @@
+name: Feature Request
+description: Suggest a new capability or improvement
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Helios is a frozen trust primitive. The specification and test vectors will not change. However, we welcome:
+        - New language implementations that pass all 17 frozen vectors
+        - Documentation improvements
+        - Tooling & CI enhancements
+        - Bug reports with reproducible test cases
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Use Case
+      description: What problem does this feature solve?
+      placeholder: "Example: Need to hash memory objects in Rust for..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would this feature work?
+      placeholder: "Create implementations/rust/ with the same canonical serializer and verifier..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you evaluated?
+      placeholder: "Considered wrapping the Python implementation via FFI, but a native Rust version is cleaner."
+
+  - type: checkboxes
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - label: New language implementation
+        - label: Documentation or examples
+        - label: CI / tooling improvement
+        - label: Other
