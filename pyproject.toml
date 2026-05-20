@@ -33,6 +33,11 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+]
+
 [project.urls]
 Repository = "https://github.com/holeyfield33-art/helios"
 Issues = "https://github.com/holeyfield33-art/helios/issues"
