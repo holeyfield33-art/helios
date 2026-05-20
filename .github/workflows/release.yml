@@ -9,8 +9,37 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    name: Test before release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go tests
+        run: go test ./... -count=1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Python tests
+        run: |
+          pip install -e .[test] -q
+          pytest implementations/python/tests -W error -q
+
   build-go-binaries:
     name: Build Go Binaries
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -34,7 +63,9 @@ jobs:
           [[ "$OS" == "windows" ]] && EXT=".exe"
           OUTPUT="helios-${VERSION}-${OS}-${ARCH}${EXT}"
           CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH \
-            go build -o "$OUTPUT" ./cmd/helios/
+            go build \
+              -ldflags "-X main.version=${VERSION}" \
+              -o "$OUTPUT" ./cmd/helios/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -45,6 +76,7 @@ jobs:
 
   build-python-package:
     name: Build Python Package
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -80,7 +112,7 @@ jobs:
         with:
           path: release-artifacts
 
-      - name: Prepare release assets
+      - name: Prepare release assets and generate checksums
         run: |
           mkdir -p release
           find release-artifacts -type f -name "helios-*" \
@@ -88,9 +120,15 @@ jobs:
           find release-artifacts -type f \
             \( -name "*.whl" -o -name "*.tar.gz" \) \
             -exec cp {} release/ \;
-          ls -lah release/
+          cd release
+          sha256sum * > SHA256SUMS.txt
+          echo "--- release contents ---"
+          cat SHA256SUMS.txt
+          ls -lh
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

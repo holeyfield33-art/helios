@@ -5,15 +5,24 @@ name: Publish to PyPI
     types: [published]
 
 permissions:
+  contents: read
   id-token: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/helios-core/
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install build && python -m build
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Download dist artifacts from GitHub Release
+        run: |
+          gh release download "${{ github.event.release.tag_name }}" \
+            --pattern "*.whl" \
+            --pattern "helios_core-*.tar.gz" \
+            --dir dist/
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

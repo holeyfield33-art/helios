@@ -24,6 +24,7 @@ keywords = [
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -43,6 +44,7 @@ build = [
 
 [project.urls]
 Repository = "https://github.com/holeyfield33-art/helios"
+Changelog = "https://github.com/holeyfield33-art/helios/blob/main/CHANGELOG.md"
 Issues = "https://github.com/holeyfield33-art/helios/issues"
 Specification = "https://github.com/holeyfield33-art/helios/tree/main/spec"
 Documentation = "https://github.com/holeyfield33-art/helios#readme"
