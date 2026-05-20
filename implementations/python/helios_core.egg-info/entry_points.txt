@@ -1,2 +1,0 @@
-[console_scripts]
-helios-verify = conformance.verifier:main
