@@ -37,6 +37,9 @@ dependencies = []
 test = [
     "pytest>=8.0",
 ]
+build = [
+    "build>=1.0",
+]
 
 [project.urls]
 Repository = "https://github.com/holeyfield33-art/helios"
@@ -45,7 +48,7 @@ Specification = "https://github.com/holeyfield33-art/helios/tree/main/spec"
 Documentation = "https://github.com/holeyfield33-art/helios#readme"
 
 [project.scripts]
-helios-verify = "conformance.verifier:main"
+helios-verify = "helios.cli:verify_main"
 
 [tool.setuptools.packages.find]
 where = ["implementations/python"]
@@ -53,7 +56,7 @@ include = ["conformance*", "helios*"]
 
 [tool.setuptools.package-data]
 conformance = ["py.typed"]
-helios = ["py.typed"]
+helios = ["py.typed", "cli.py"]
 
 [tool.pytest.ini_options]
 pythonpath = ["implementations/python"]

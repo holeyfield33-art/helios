@@ -40,3 +40,48 @@ jobs:
         run: pip install -e .[test]
       - name: Run Python tests
         run: pytest implementations/python/tests -W error -v
+      - name: Build wheel and sdist
+        run: |
+          pip install build
+          python -m build --outdir /tmp/helios-dist
+          ls -lh /tmp/helios-dist/
+      - name: Smoke-test public API from installed package
+        run: |
+          python - <<'EOF'
+          from helios import hash_memory_object, canonicalize, MemoryObject, Relationship, __version__
+
+          # Dict-based API
+          h = hash_memory_object({
+              "category": "project",
+              "created_at": "2025-01-15T10:30:00.000Z",
+              "key": "test/smoke",
+              "relationships": [{"key": "other/obj", "type": "related_to"}],
+              "source": "ci",
+              "value": "smoke test",
+          })
+          assert len(h) == 64, f"Expected 64-char hex, got: {h!r}"
+
+          # Typed API
+          obj = MemoryObject(
+              category="project",
+              created_at="2025-01-15T10:30:00.000Z",
+              key="test/smoke",
+              relationships=[Relationship(key="other/obj", type="related_to")],
+              source="ci",
+              value="smoke test",
+          )
+          assert hash_memory_object(obj) == h, "Dict and MemoryObject APIs must agree"
+
+          # canonicalize
+          b = canonicalize({"z": 1, "a": 2})
+          assert b == b'{"a":2,"z":1}', f"Unexpected canonical bytes: {b!r}"
+
+          # TypeError on bad input
+          try:
+              hash_memory_object(42)
+              assert False, "Should have raised TypeError"
+          except TypeError:
+              pass
+
+          print(f"smoke tests PASS  (helios-core {__version__}, hash={h})")
+          EOF
