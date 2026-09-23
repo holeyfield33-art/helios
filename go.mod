@@ -1,5 +1,5 @@
 module github.com/holeyfield33-art/helios
 
-go 1.25.4
+go 1.26.0
 
-require golang.org/x/text v0.34.0
+require golang.org/x/text v0.42.0
